@@ -10,7 +10,6 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 const InputContainer = styled.div<{ fullWidth?: boolean }>`
   display: flex;
   flex-direction: column;
-  margin-bottom: 1rem;
   width: ${(props) => (props.fullWidth ? "100%" : "auto")};
 `;
 

@@ -13,7 +13,7 @@ export interface MockRequest {
 
 export async function mockFetch({ url, method, body }: MockRequest) {
   // Delay to simulate network latency
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  // await new Promise((resolve) => setTimeout(resolve, 4000));
 
   // Mock for onboarding a user
   if (url.endsWith("/protected/onboard") && method === "POST") {
@@ -69,7 +69,7 @@ export async function mockFetch({ url, method, body }: MockRequest) {
     return {
       totalCash: 300,
       totalPoints: 1000,
-      successfulReferralCount: 12,
+      sucessfulReferralCount: 7,
       badgeUrl: "https://example.com/badge.png",
       username: "MockUser",
     };
@@ -80,8 +80,8 @@ export async function mockFetch({ url, method, body }: MockRequest) {
     return [
       { status: "successful", username: "Friend1" },
       { status: "pending", username: "Friend2" },
-      { status: "successful", username: "Friend1" },
-      { status: "pending", username: "Friend2" },
+      { status: "successful", username: "Friend3" },
+      { status: "pending", username: "Friend4" },
     ];
   }
 
@@ -295,7 +295,7 @@ json
 {
   "totalCash": 0,
   "totalPoints": 0,
-  "successfulReferralCount": 0,
+  "sucessfulReferralCount": 0,
   "badgeUrl": "string",
   "username": "string"
 }
@@ -304,7 +304,7 @@ json
 
     totalPoints (int): Total points available for the user.
 
-    successfulReferralCount (int): The number of successful referrals made by the user.
+    sucessfulReferralCount (int): The number of successful referrals made by the user.
 
     badgeUrl (string): URL to the user's badge image.
 

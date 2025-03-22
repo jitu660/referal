@@ -18,13 +18,14 @@ const JWT_TOKEN = "HARDCODED_JWT_TOKEN";
 
 // Export the fetcherWithJWT function to be used directly by components
 export async function fetcherWithJWT(url: string, method: MockMethod = "GET", body?: Record<string, unknown>) {
+  const fullUrl = `${BASE_URL}${url}`;
+  console.log(`making api call to: ${fullUrl}`, { method, body });
   if (import.meta.env.DEV) {
     // Return mock data in development.
     return mockFetch({ url, method, body });
   }
 
   // Real fetch in production.
-  const fullUrl = `${BASE_URL}${url}`;
   console.log(`Making API call to: ${fullUrl}`, { method, body });
   const response = await fetch(fullUrl, {
     method,

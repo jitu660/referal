@@ -221,14 +221,21 @@ const ContactsList = styled.div`
   margin-top: 1rem;
 `;
 
-const ContactItem = styled.div`
+const ContactItem = styled(motion.div)`
   display: flex;
-  align-items: center;
+  flex-direction: column;
   padding: 1rem;
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   border: 1px solid ${(props) => props.theme.colors.gray[100]};
+  overflow: hidden;
+`;
+
+const ContactItemContent = styled.div`
+  display: flex;
+  align-items: center;
+  width: 100%;
 `;
 
 const ContactAvatar = styled.div<{ bgColor: string }>`
@@ -271,11 +278,35 @@ interface WithdrawFormProps {
   isLoading: boolean;
 }
 
-const FormContainer = styled.div`
+const FormContainer = styled(motion.div)`
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  overflow: hidden;
 `;
+
+const formVariants = {
+  hidden: {
+    height: 0,
+    opacity: 0,
+    transition: {
+      height: { duration: 0 },
+      opacity: { duration: 0 },
+    },
+  },
+  visible: {
+    height: "auto",
+    opacity: 1,
+    transition: {
+      height: {
+        type: "spring",
+        stiffness: 300,
+        damping: 30,
+      },
+      opacity: { duration: 0.2 },
+    },
+  },
+};
 
 const WithdrawForm: React.FC<WithdrawFormProps> = ({ onClose, onSubmit, maxAmount, isLoading }) => {
   const [amount, setAmount] = useState("");
@@ -306,7 +337,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ onClose, onSubmit, maxAmoun
   };
 
   return (
-    <FormContainer>
+    <FormContainer initial="hidden" animate="visible" exit="hidden" variants={formVariants}>
       <Input
         label="Amount (₹)"
         type="number"
@@ -520,12 +551,14 @@ const RewardsPage: React.FC<{ userId: string }> = ({ userId }) => {
     return (
       <PageContainer initial="initial" animate="animate" exit="exit" variants={pageVariants}>
         <Card variants={cardVariants}>
-          <CardContent style={{ display: "flex", justifyContent: "center", padding: "4rem 1rem" }}>
+          <CardContent>
             <BackButton to="/">Back to Dashboard</BackButton>
             <CardHeader>
               <CardTitle>Rewards</CardTitle>
             </CardHeader>
-            <Spinner size={40} color="#4a80f0" />
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <Spinner size={40} color="#4a80f0" />
+            </div>
           </CardContent>
         </Card>
       </PageContainer>
@@ -643,33 +676,40 @@ const RewardsPage: React.FC<{ userId: string }> = ({ userId }) => {
                     style={{ width: "100%" }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   >
-                    {!isWithdrawing ? (
-                      <Button
-                        primary
-                        fullWidth
-                        onClick={() => setIsWithdrawing(true)}
-                        disabled={!transactionInfo?.totalCash || transactionInfo.totalCash <= 0}
-                      >
-                        Withdraw Cash
-                      </Button>
-                    ) : (
-                      <Section>
-                        <SectionTitle>Withdraw Cash</SectionTitle>
-                        {isProcessing ? (
-                          <div style={{ textAlign: "center", padding: "2rem 0" }}>
-                            <Spinner size={40} color="#4a80f0" />
-                            <div style={{ marginTop: "1rem" }}>Processing your withdrawal...</div>
-                          </div>
-                        ) : (
-                          <WithdrawForm
-                            onClose={() => setIsWithdrawing(false)}
-                            onSubmit={handleWithdraw}
-                            maxAmount={transactionInfo?.totalCash || 0}
-                            isLoading={isProcessing}
-                          />
-                        )}
-                      </Section>
-                    )}
+                    <motion.div
+                      layout="position"
+                      transition={{
+                        layout: { type: "spring", stiffness: 300, damping: 30, duration: 0.3 },
+                      }}
+                    >
+                      {!isWithdrawing ? (
+                        <Button
+                          primary
+                          fullWidth
+                          onClick={() => setIsWithdrawing(true)}
+                          disabled={!transactionInfo?.totalCash || transactionInfo.totalCash <= 0}
+                        >
+                          Withdraw Cash
+                        </Button>
+                      ) : (
+                        <Section>
+                          <SectionTitle>Withdraw Cash</SectionTitle>
+                          {isProcessing ? (
+                            <div style={{ textAlign: "center", padding: "2rem 0" }}>
+                              <Spinner size={40} color="#4a80f0" />
+                              <div style={{ marginTop: "1rem" }}>Processing your withdrawal...</div>
+                            </div>
+                          ) : (
+                            <WithdrawForm
+                              onClose={() => setIsWithdrawing(false)}
+                              onSubmit={handleWithdraw}
+                              maxAmount={transactionInfo?.totalCash || 0}
+                              isLoading={isProcessing}
+                            />
+                          )}
+                        </Section>
+                      )}
+                    </motion.div>
                   </motion.div>
 
                   <motion.div
@@ -693,12 +733,33 @@ const RewardsPage: React.FC<{ userId: string }> = ({ userId }) => {
                             const isActive = sendingPoints === referral.username;
 
                             return (
-                              <ContactItem key={referral.username}>
-                                <ContactAvatar bgColor={avatarColor}>{initials}</ContactAvatar>
-                                <ContactInfo>
-                                  <ContactName>{referral.username}</ContactName>
-                                </ContactInfo>
-                                {isActive ? (
+                              <ContactItem
+                                key={referral.username}
+                                layout="position"
+                                transition={{
+                                  layout: { type: "spring", stiffness: 300, damping: 30, duration: 0.3 },
+                                }}
+                              >
+                                <ContactItemContent>
+                                  <ContactAvatar bgColor={avatarColor}>{initials}</ContactAvatar>
+                                  <ContactInfo>
+                                    <ContactName>{referral.username}</ContactName>
+                                  </ContactInfo>
+                                  {!isActive && (
+                                    <InviteButton
+                                      primary
+                                      onClick={() => setSendingPoints(referral.username)}
+                                      disabled={isSending}
+                                    >
+                                      {isSending ? <Spinner size={16} /> : <Send size={16} />}
+                                      <span style={{ marginLeft: "0.5rem" }}>
+                                        {isSending ? "Sending" : "Send Points"}
+                                      </span>
+                                    </InviteButton>
+                                  )}
+                                </ContactItemContent>
+
+                                {isActive && (
                                   <SendPointsForm
                                     onClose={() => setSendingPoints(null)}
                                     onSubmit={handleSendPoints}
@@ -706,17 +767,6 @@ const RewardsPage: React.FC<{ userId: string }> = ({ userId }) => {
                                     username={referral.username}
                                     isLoading={loadingSend.has(referral.username)}
                                   />
-                                ) : (
-                                  <InviteButton
-                                    primary
-                                    onClick={() => setSendingPoints(referral.username)}
-                                    disabled={isSending}
-                                  >
-                                    {isSending ? <Spinner size={16} /> : <Send size={16} />}
-                                    <span style={{ marginLeft: "0.5rem" }}>
-                                      {isSending ? "Sending" : "Send Points"}
-                                    </span>
-                                  </InviteButton>
                                 )}
                               </ContactItem>
                             );

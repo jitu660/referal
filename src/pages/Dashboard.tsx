@@ -13,7 +13,7 @@ import { PageContainer, Card, CardContent, pageVariants, cardVariants } from "..
 interface UserInfoData {
   totalCash: number;
   totalPoints: number;
-  successfulReferralCount: number;
+  sucessfulReferralCount: number;
   badgeUrl: string;
   username: string;
   referralCode?: string;
@@ -156,12 +156,12 @@ const MilestoneMarkers = styled.div`
   justify-content: space-between;
   width: 100%;
   position: relative;
-  margin-top: -12px;
+  margin-top: -16px;
 `;
 
 const MilestoneMarker = styled.div<{ active: boolean; tier: string; achieved?: boolean }>`
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -191,15 +191,16 @@ const MilestoneMarker = styled.div<{ active: boolean; tier: string; achieved?: b
 `;
 
 const MilestoneValue = styled.div<{ active: boolean }>`
-  font-size: 10px;
-  font-weight: ${(props) => props.theme.fontWeights.semibold};
+  font-size: 12px;
+  font-weight: ${(props) => props.theme.fontWeights.bold};
   color: ${(props) => (props.active ? props.theme.colors.blue[600] : props.theme.colors.gray[400])};
   margin-top: 4px;
   text-align: center;
   position: absolute;
-  bottom: -18px;
+  bottom: -26px;
   left: 50%;
   transform: translateX(-50%);
+  text-shadow: ${(props) => (props.active ? "0 1px 1px rgba(0, 0, 0, 0.1)" : "none")};
 `;
 
 const ProgressMessage = styled.div`
@@ -375,8 +376,8 @@ const SkeletonProgressBar = styled(SkeletonBox)`
 `;
 
 const SkeletonMarker = styled(SkeletonBox)`
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
 `;
 
@@ -513,27 +514,26 @@ const RotatingDigits = ({
 const getIconForTier = (tier: string) => {
   switch (tier) {
     case "Bronze":
-      return <Medal size={14} />;
+      return <Medal size={18} />;
     case "Silver":
-      return <Target size={14} />;
+      return <Target size={18} />;
     case "Gold":
-      return <Trophy size={14} />;
+      return <Trophy size={18} />;
     case "Platinum":
-      return <Award size={14} />;
+      return <Award size={18} />;
     default:
       return null;
   }
 };
 
-const ARTIFICAL_DELAY = 0; // Set to 0 to allow real API calls to be visible in network tab
+const ARTIFICAL_DELAY = 1000; // Set to 0 to allow real API calls to be visible in network tab
 const DashBoard = ({ userId }: ReferralCardProps) => {
   const [isLoadingMock, setIsLoadingMock] = useState(true);
   const [isRewardsDrawerOpen, setIsRewardsDrawerOpen] = useState(false);
   const { data: userInfo, isLoading: apiLoading } = useBackendGET<UserInfoData>(
-    `protected/refluent/userinfo/${userId}`,
+    `/protected/refluent/userinfo/${userId}`,
     {}
   );
-  console.log({ userInfo });
 
   // Simulate a loading delay to better demonstrate the skeleton animation
   useEffect(() => {
@@ -566,7 +566,7 @@ const DashBoard = ({ userId }: ReferralCardProps) => {
       };
     }
 
-    const referralCount = userInfo.successfulReferralCount || 0;
+    const referralCount = userInfo.sucessfulReferralCount || 0;
 
     // Find the current milestone index
     let currentMilestoneIndex = -1;
@@ -717,7 +717,7 @@ const DashBoard = ({ userId }: ReferralCardProps) => {
                   </SectionTitleWrapper>
 
                   <ProgressCount>
-                    <CurrentCount>{userInfo?.successfulReferralCount || 0}</CurrentCount> referrals
+                    <CurrentCount>{userInfo?.sucessfulReferralCount || 0}</CurrentCount> referrals
                     {currentMilestone >= 0 && (
                       <span style={{ marginLeft: "auto" }}>
                         Current tier: <span style={{ color: "#4a80f0" }}>{getCurrentTierName()}</span>
@@ -731,7 +731,11 @@ const DashBoard = ({ userId }: ReferralCardProps) => {
                         width={barFillPercentage}
                         initial={{ width: 0 }}
                         animate={{ width: `${Math.min(barFillPercentage, 100)}%` }}
-                        transition={{ duration: 1, ease: "easeOut" }}
+                        transition={{
+                          duration: 1.2,
+                          ease: completePercentage < 100 ? [0.34, 1.56, 0.64, 1] : "easeInOut", // Custom ease with slight bounce
+                          delay: 0.2,
+                        }}
                       />
                     </ProgressLine>
 
@@ -740,7 +744,7 @@ const DashBoard = ({ userId }: ReferralCardProps) => {
                         const isActive = isMaxTier
                           ? true
                           : index <= currentMilestone || (index === nextMilestone && barFillPercentage >= 50);
-                        const isAchieved = userInfo?.successfulReferralCount >= milestone.value;
+                        const isAchieved = userInfo?.sucessfulReferralCount >= milestone.value;
 
                         return (
                           <MilestoneMarker key={index} tier={milestone.name} active={isActive} achieved={isAchieved}>

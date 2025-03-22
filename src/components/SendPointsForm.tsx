@@ -1,8 +1,51 @@
 import React, { useState } from "react";
 import styled from "@emotion/styled";
+import { motion } from "framer-motion";
 import Button from "./ui/button";
 import Input from "./ui/input";
 import Spinner from "./ui/spinner";
+
+const FormContainer = styled(motion.div)`
+  display: flex;
+  align-items: center;
+  width: 100%;
+  overflow: hidden;
+  margin-top: 1rem;
+`;
+
+const InputWrapper = styled.div`
+  flex: 1;
+  margin-right: 0.75rem;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 0.5rem;
+`;
+
+// Only define animation for appearing, not for disappearing
+const formVariants = {
+  hidden: {
+    height: 0,
+    opacity: 0,
+    transition: {
+      height: { duration: 0 },
+      opacity: { duration: 0 },
+    },
+  },
+  visible: {
+    height: "auto",
+    opacity: 1,
+    transition: {
+      height: {
+        type: "spring",
+        stiffness: 300,
+        damping: 30,
+      },
+      opacity: { duration: 0.2 },
+    },
+  },
+};
 
 interface SendPointsFormProps {
   onClose: () => void;
@@ -11,24 +54,6 @@ interface SendPointsFormProps {
   username: string;
   isLoading: boolean;
 }
-
-const FormContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-`;
-
-const ButtonRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 1rem;
-`;
-
-const ErrorMessage = styled.div`
-  color: #e53e3e;
-  font-size: 14px;
-`;
 
 const SendPointsForm: React.FC<SendPointsFormProps> = ({ onClose, onSubmit, maxAmount, username, isLoading }) => {
   const [amount, setAmount] = useState("");
@@ -53,37 +78,28 @@ const SendPointsForm: React.FC<SendPointsFormProps> = ({ onClose, onSubmit, maxA
   };
 
   return (
-    <FormContainer>
-      <div>
-        <strong>Send Points to {username}</strong>
-      </div>
-      <Input
-        label="Amount (points)"
-        type="number"
-        placeholder="Enter amount"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        fullWidth
-        min={1}
-        max={maxAmount}
-        disabled={isLoading}
-      />
-      {error && <ErrorMessage>{error}</ErrorMessage>}
-      <ButtonRow>
-        <Button onClick={onClose} disabled={isLoading}>
+    <FormContainer initial="hidden" animate="visible" exit="hidden" variants={formVariants}>
+      <InputWrapper>
+        <Input
+          type="number"
+          placeholder="Points to send"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          fullWidth
+          min={1}
+          max={maxAmount}
+          disabled={isLoading}
+          error={error}
+        />
+      </InputWrapper>
+      <ButtonGroup>
+        <Button onClick={onClose} disabled={isLoading} size="sm">
           Cancel
         </Button>
-        <Button primary onClick={handleSubmit} disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Spinner size={16} />
-              <span style={{ marginLeft: "0.5rem" }}>Sending...</span>
-            </>
-          ) : (
-            "Send Points"
-          )}
+        <Button primary onClick={handleSubmit} disabled={isLoading} size="sm">
+          {isLoading ? <Spinner size={16} /> : "Send"}
         </Button>
-      </ButtonRow>
+      </ButtonGroup>
     </FormContainer>
   );
 };

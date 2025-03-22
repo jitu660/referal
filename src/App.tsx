@@ -1,7 +1,6 @@
-import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import ReferralPage from "./pages/ReferralPage";
-import Dashboard from "./pages/Dashboard";
+import DashBoard from "./pages/Dashboard";
+import ReferPage from "./pages/ReferPage";
 import { GlobalStyles } from "./styles/GlobalStyles";
 import { ThemeProvider } from "./styles/ThemeProvider";
 import styled from "@emotion/styled";
@@ -74,9 +73,8 @@ export default function App() {
           </Header>
           <MainContent>
             <Routes>
-              <Route path="/" element={<ReferralPage userId={"97fffc35b648278c"} />} />
-              <Route path="/referral" element={<ReferralPage userId={"97fffc35b648278c"} />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/" element={<DashBoard userId={"97fffc35b648278c"} />} />
+              <Route path="/refer" element={<ReferPage />} />
             </Routes>
           </MainContent>
         </AppContainer>

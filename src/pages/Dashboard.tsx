@@ -1,322 +1,901 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { ChartLine, Trophy, Users, Share, Clock, Coins, ArrowUp, DollarSign } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Share2, ChevronRight, Users, Gift, Award, Medal, Target, Trophy, Info } from "lucide-react";
+import { useBackendGET } from "../api/useBackend";
+import styled from "@emotion/styled";
+import { formatNumber, formatCurrency } from "../lib/utils";
+import { Link } from "react-router-dom";
+import BottomDrawer from "../components/BottomDrawer";
+import TierRewardsInfo from "../components/TierRewardsInfo";
 
-import { formatCurrency, formatNumber } from "../lib/utils";
+// Types
+interface UserInfoData {
+  totalCash: number;
+  totalPoints: number;
+  successfulReferralCount: number;
+  badgeUrl: string;
+  username: string;
+  referralCode?: string;
+}
 
-// UI Components
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "../components/ui/avatar";
-import { Button } from "../components/ui/button";
-import { Progress } from "../components/ui/progress";
-
-// Mock data
-const mockData = {
-  user: {
-    id: "user123",
-    name: "Alex Thompson",
-    avatarUrl: "https://i.pravatar.cc/150?u=alex123",
-    cash: 3850,
-    points: 1250,
-    monthlyPoints: 250,
-    rank: 8,
-    recentReferrals: 3,
-    weeklyGoal: 5,
-    weeklyReferrals: 3,
-    rankupPoints: 1240,
-    nextRank: 7,
-  },
-  topReferrers: [
-    { id: "r1", name: "Olivia Martinez", avatarUrl: "https://i.pravatar.cc/150?u=olivia123", points: 3200 },
-    { id: "r2", name: "Michael Chen", avatarUrl: "https://i.pravatar.cc/150?u=michael123", points: 2100 },
-    { id: "r3", name: "James Anderson", avatarUrl: "https://i.pravatar.cc/150?u=james123", points: 1560 },
-  ],
-  recentTransactions: [
-    {
-      id: "t1",
-      name: "Sarah Johnson",
-      avatarUrl: "https://i.pravatar.cc/150?u=sarah123",
-      amount: 250,
-      type: "credit" as const,
-      date: "2h ago",
-    },
-  ],
-};
+interface ReferralCardProps {
+  userId: string;
+}
 
 // Animation variants
-const fadeIn = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (i: number) => ({
+const pageVariants = {
+  initial: { opacity: 0 },
+  animate: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.1,
+    },
+  },
+  exit: { opacity: 0 },
+};
+
+const cardVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: {
     opacity: 1,
     y: 0,
     transition: {
-      delay: i * 0.1,
-      duration: 0.4,
-      ease: "easeOut",
+      type: "spring",
+      damping: 20,
     },
-  }),
+  },
+  exit: { opacity: 0, y: 20 },
 };
 
-const Dashboard = () => {
-  const { user, topReferrers, recentTransactions } = mockData;
+// Additional animation for skeletons
+const skeletonPulse = {
+  initial: { opacity: 0.6 },
+  animate: {
+    opacity: [0.6, 0.8, 0.6],
+    transition: {
+      repeat: Infinity,
+      duration: 1.5,
+      ease: "easeInOut",
+    },
+  },
+};
 
-  // Progress colors for weekly goals
-  const getProgressColor = (achieved: boolean) => (achieved ? "bg-primary-500" : "bg-gray-200");
+// Styled Components
+const PageContainer = styled(motion.div)`
+  background-color: ${(props) => props.theme.colors.background};
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+
+  @media (min-width: ${(props) => props.theme.breakpoints.sm}) {
+    padding: 1.5rem;
+  }
+`;
+
+const Card = styled(motion.div)`
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  width: 100%;
+  max-width: 100%; // Full width for mobile
+  margin: 0 auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  @media (min-width: ${(props) => props.theme.breakpoints.md}) {
+    max-width: 480px; // Constrained on larger screens
+  }
+`;
+
+const CardContent = styled.div`
+  padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+`;
+
+const ProfileSection = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+`;
+
+const Avatar = styled.div`
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background-color: ${(props) => props.theme.colors.gray[100]};
+  overflow: hidden;
+  margin-right: 1.5rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const UserSvgAvatar = styled.div`
+  width: 60%;
+  height: 60%;
+  color: ${(props) => props.theme.colors.gray[400]};
+`;
+
+const StatsGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+`;
+
+const StatCard = styled.div`
+  background-color: ${(props) => props.theme.colors.blue[50]};
+  border-radius: 16px;
+  padding: 1.25rem;
+`;
+
+const StatLabel = styled.div`
+  color: ${(props) => props.theme.colors.blue[600]};
+  font-size: ${(props) => props.theme.fontSizes.sm};
+  font-weight: ${(props) => props.theme.fontWeights.medium};
+  margin-bottom: 0.5rem;
+`;
+
+const StatValue = styled.div`
+  font-size: ${(props) => props.theme.fontSizes.xl};
+  font-weight: ${(props) => props.theme.fontWeights.bold};
+  color: ${(props) => props.theme.colors.text.primary};
+`;
+
+const MilestoneSection = styled.div`
+  background-color: ${(props) => props.theme.colors.blue[50]};
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+`;
+
+const SectionTitle = styled.h2`
+  font-size: ${(props) => props.theme.fontSizes.md};
+  font-weight: ${(props) => props.theme.fontWeights.semibold};
+  color: ${(props) => props.theme.colors.blue[600]};
+  margin: 0 0 1rem 0;
+`;
+
+const SectionTitleWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+`;
+
+const InfoIconButton = styled.button`
+  background: transparent;
+  border: none;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+  color: ${(props) => props.theme.colors.blue[600]};
+  transition:
+    background-color 0.2s,
+    transform 0.2s;
+
+  &:hover {
+    background-color: rgba(74, 128, 240, 0.1);
+    transform: scale(1.05);
+  }
+`;
+
+const ProgressBar = styled.div`
+  position: relative;
+  margin: 1.5rem 0 1rem;
+`;
+
+const ProgressLine = styled.div`
+  height: 3px;
+  background-color: ${(props) => props.theme.colors.gray[200]};
+  position: relative;
+  width: 100%;
+  border-radius: 3px;
+`;
+
+const ProgressFill = styled(motion.div)<{ width: number }>`
+  height: 100%;
+  width: ${(props) => `${Math.min(Math.max(props.width, 0), 100)}%`};
+  background-color: ${(props) => props.theme.colors.blue[500]};
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 3px;
+`;
+
+const MilestoneMarkers = styled.div`
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  position: relative;
+  margin-top: -12px;
+`;
+
+const MilestoneMarker = styled.div<{ active: boolean; tier: string; achieved?: boolean }>`
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  position: relative;
+  z-index: 1;
+  background-color: ${(props) => {
+    if (!props.active) return props.theme.colors.gray[200];
+
+    switch (props.tier) {
+      case "Bronze":
+        return "#CD7F32"; // Bronze color
+      case "Silver":
+        return "#C0C0C0"; // Silver color
+      case "Gold":
+        return "#FFD700"; // Gold color
+      case "Platinum":
+        return "#E5E4E2"; // Platinum color
+      default:
+        return props.theme.colors.blue[500];
+    }
+  }};
+  color: white;
+  border: ${(props) => (props.achieved ? "2px solid #4a80f0" : "none")};
+  box-shadow: ${(props) => (props.achieved ? "0 0 4px rgba(74, 128, 240, 0.5)" : "none")};
+`;
+
+const MilestoneValue = styled.div<{ active: boolean }>`
+  font-size: 10px;
+  font-weight: ${(props) => props.theme.fontWeights.semibold};
+  color: ${(props) => (props.active ? props.theme.colors.blue[600] : props.theme.colors.gray[400])};
+  margin-top: 4px;
+  text-align: center;
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+`;
+
+const ProgressMessage = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: ${(props) => props.theme.fontSizes.sm};
+  color: ${(props) => props.theme.colors.text.secondary};
+  margin-top: 2rem;
+
+  span {
+    color: ${(props) => props.theme.colors.blue[600]};
+    font-weight: ${(props) => props.theme.fontWeights.medium};
+  }
+`;
+
+const ProgressCount = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  font-size: ${(props) => props.theme.fontSizes.sm};
+  font-weight: ${(props) => props.theme.fontWeights.medium};
+  color: ${(props) => props.theme.colors.text.secondary};
+`;
+
+const CurrentCount = styled.span`
+  font-size: ${(props) => props.theme.fontSizes.xl};
+  color: ${(props) => props.theme.colors.text.primary};
+  font-weight: ${(props) => props.theme.fontWeights.bold};
+  margin-right: 0.25rem;
+`;
+
+const NextGoal = styled.span`
+  color: ${(props) => props.theme.colors.blue[600]};
+`;
+
+const ActionButtonsGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+`;
+
+const ActionButton = styled(motion.button)<{ primary?: boolean }>`
+  background-color: ${(props) => (props.primary ? props.theme.colors.blue[500] : "white")};
+  color: ${(props) => (props.primary ? "white" : props.theme.colors.text.primary)};
+  border: ${(props) => (props.primary ? "none" : `1px solid ${props.theme.colors.gray[300]}`)};
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: ${(props) => (props.primary ? props.theme.colors.blue[600] : props.theme.colors.gray[100])};
+  }
+`;
+
+const ActionButtonLink = styled(Link)<{ primary?: boolean }>`
+  background-color: ${(props) => (props.primary ? props.theme.colors.blue[500] : "white")};
+  color: ${(props) => (props.primary ? "white" : props.theme.colors.text.primary)};
+  border: ${(props) => (props.primary ? "none" : `1px solid ${props.theme.colors.gray[300]}`)};
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s ease;
+  text-decoration: none;
+
+  &:hover {
+    background-color: ${(props) => (props.primary ? props.theme.colors.blue[600] : props.theme.colors.gray[100])};
+  }
+`;
+
+const HowItWorksSection = styled.div`
+  background-color: ${(props) => props.theme.colors.blue[50]};
+  border-radius: 16px;
+  padding: 1.5rem;
+`;
+
+const HowItWorksTitle = styled.h2`
+  font-size: ${(props) => props.theme.fontSizes.lg};
+  font-weight: ${(props) => props.theme.fontWeights.bold};
+  color: ${(props) => props.theme.colors.blue[600]};
+  margin: 0 0 1.5rem 0;
+  text-transform: uppercase;
+`;
+
+const StepsList = styled.div`
+  display: flex;
+  flex-direction: column;
+  position: relative;
+`;
+
+const Step = styled.div`
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  margin-bottom: 2rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const StepIconWrapper = styled.div`
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  color: ${(props) => props.theme.colors.blue[500]};
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 2;
+`;
+
+const StepNumber = styled.div`
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: ${(props) => props.theme.colors.blue[500]};
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const StepText = styled.div`
+  font-size: ${(props) => props.theme.fontSizes.md};
+  color: ${(props) => props.theme.colors.text.primary};
+  padding-top: 0.25rem;
+`;
+
+const ConnectingLine = styled.div`
+  position: absolute;
+  top: 0;
+  left: 1.25rem;
+  width: 2px;
+  height: 100%;
+  background-color: ${(props) => props.theme.colors.blue[300]};
+  z-index: 0;
+`;
+
+// Skeleton components
+const SkeletonBox = styled(motion.div)`
+  background-color: ${(props) => props.theme.colors.gray[200]};
+  border-radius: 8px;
+`;
+
+const SkeletonAvatar = styled(SkeletonBox)`
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  margin-right: 1.5rem;
+`;
+
+const SkeletonText = styled(SkeletonBox)<{ width?: string }>`
+  height: 1.25rem;
+  width: ${(props) => props.width || "100%"};
+  margin-bottom: 0.5rem;
+`;
+
+const SkeletonStatCard = styled(SkeletonBox)`
+  height: 5rem;
+  padding: 1rem;
+  border-radius: 16px;
+`;
+
+const SkeletonProgressBar = styled(SkeletonBox)`
+  height: 3px;
+  width: 100%;
+  margin: 1.5rem 0;
+`;
+
+const SkeletonMarker = styled(SkeletonBox)`
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+`;
+
+const SkeletonButton = styled(SkeletonBox)`
+  height: 3rem;
+  border-radius: 12px;
+`;
+
+// Loading skeleton components
+const ProfileSkeleton = () => (
+  <ProfileSection>
+    <SkeletonAvatar variants={skeletonPulse} initial="initial" animate="animate" />
+    <div>
+      <SkeletonText width="150px" variants={skeletonPulse} initial="initial" animate="animate" />
+    </div>
+  </ProfileSection>
+);
+
+const StatsSkeleton = () => (
+  <StatsGrid>
+    <SkeletonStatCard variants={skeletonPulse} initial="initial" animate="animate" />
+    <SkeletonStatCard variants={skeletonPulse} initial="initial" animate="animate" />
+  </StatsGrid>
+);
+
+const MilestonesSkeleton = () => (
+  <MilestoneSection>
+    <SkeletonText width="40%" variants={skeletonPulse} initial="initial" animate="animate" />
+    <div style={{ margin: "1.5rem 0" }}>
+      <SkeletonText width="60%" variants={skeletonPulse} initial="initial" animate="animate" />
+    </div>
+    <SkeletonProgressBar variants={skeletonPulse} initial="initial" animate="animate" />
+    <div style={{ display: "flex", justifyContent: "space-between", margin: "1rem 0" }}>
+      {[1, 2, 3, 4].map((i) => (
+        <SkeletonMarker key={i} variants={skeletonPulse} initial="initial" animate="animate" />
+      ))}
+    </div>
+    <div style={{ display: "flex", justifyContent: "space-between", marginTop: "1rem" }}>
+      <SkeletonText width="30%" variants={skeletonPulse} initial="initial" animate="animate" />
+      <SkeletonText width="20%" variants={skeletonPulse} initial="initial" animate="animate" />
+    </div>
+  </MilestoneSection>
+);
+
+const ActionButtonsSkeleton = () => (
+  <ActionButtonsGrid>
+    <SkeletonButton variants={skeletonPulse} initial="initial" animate="animate" />
+    <SkeletonButton variants={skeletonPulse} initial="initial" animate="animate" />
+  </ActionButtonsGrid>
+);
+
+const HowItWorksSkeleton = () => (
+  <HowItWorksSection>
+    <SkeletonText width="80%" variants={skeletonPulse} initial="initial" animate="animate" />
+    <div style={{ marginTop: "2rem" }}>
+      <div style={{ display: "flex", alignItems: "center", marginBottom: "1rem" }}>
+        <SkeletonMarker variants={skeletonPulse} initial="initial" animate="animate" />
+        <SkeletonText
+          width="70%"
+          style={{ marginLeft: "1rem" }}
+          variants={skeletonPulse}
+          initial="initial"
+          animate="animate"
+        />
+      </div>
+    </div>
+  </HowItWorksSection>
+);
+
+// Framer Motion Rotating Digits Component
+const RotatingDigits = ({
+  value,
+  formatter,
+  duration = 3000,
+}: {
+  value: number;
+  formatter: (val: number) => string;
+  duration?: number;
+}) => {
+  const formattedValue = formatter(value);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 font-sans">
-      <div className="max-w-6xl mx-auto">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Your Referral Dashboard</h1>
-          <p className="text-gray-600 mt-1">Track your progress and boost your rewards!</p>
-        </header>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* Profile Card */}
-          <motion.div custom={0} initial="hidden" animate="visible" variants={fadeIn}>
-            <Card className="bg-blue-700 text-white overflow-hidden h-full">
-              <CardHeader className="pb-2">
-                <div className="flex items-center">
-                  <div className="relative">
-                    <Avatar className="h-16 w-16 border-2 border-white/20 mr-4">
-                      <AvatarImage src={user.avatarUrl} alt={user.name} />
-                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="absolute bottom-0 right-3 bg-green-500 h-4 w-4 rounded-full border-2 border-white"></div>
-                  </div>
-                  <div>
-                    <p className="text-sm text-blue-100">Welcome back</p>
-                    <h2 className="text-2xl font-bold">{user.name}</h2>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4 mt-6">
-                  <div className="bg-blue-600/40 p-4 rounded-xl backdrop-blur-sm">
-                    <div className="flex items-center text-blue-100 mb-1 text-sm">
-                      <DollarSign className="h-4 w-4 mr-1" />
-                      <span>Cash</span>
-                    </div>
-                    <div className="text-2xl font-bold tracking-tight">₹ {formatNumber(user.cash)}</div>
-                  </div>
-                  <div className="bg-blue-600/40 p-4 rounded-xl backdrop-blur-sm">
-                    <div className="flex items-center text-blue-100 mb-1 text-sm">
-                      <Coins className="h-4 w-4 mr-1" />
-                      <span>Points</span>
-                    </div>
-                    <div className="text-2xl font-bold tracking-tight">{formatNumber(user.points)}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center text-sm text-blue-100 mt-6 mb-2">
-                  <ArrowUp className="h-3 w-3 mr-1" />
-                  <span>+{user.monthlyPoints} points this month</span>
-                </div>
-                <div className="bg-white/10 h-2 w-full rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-white rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: "75%" }}
-                    transition={{ duration: 1.5, ease: "easeOut" }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* CTA Card */}
-          <motion.div custom={1} initial="hidden" animate="visible" variants={fadeIn}>
-            <Card className="border-none h-full bg-amber-50">
-              <CardHeader>
-                <CardTitle className="text-xl text-amber-900">Start earning more</CardTitle>
-                <CardDescription className="text-amber-800">
-                  Share with friends and earn up to 500 points per referral!
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center justify-center pt-6">
-                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
-                  <Button className="bg-orange-500 hover:bg-orange-600 text-white px-10 py-6 h-auto text-base font-medium rounded-xl shadow-lg shadow-orange-500/20">
-                    <Share className="mr-2 h-5 w-5" />
-                    Make a Referral
-                  </Button>
-                </motion.div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* Weekly Progress Card */}
-          <motion.div custom={2} initial="hidden" animate="visible" variants={fadeIn}>
-            <Card className="border border-gray-100 shadow-sm">
-              <CardHeader className="border-b pb-4">
-                <div className="flex items-center">
-                  <ChartLine className="h-5 w-5 text-blue-600 mr-2" />
-                  <CardTitle>Your Weekly Progress</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="flex justify-center items-center mb-8">
-                  <div className="text-center">
-                    <div className="text-6xl font-bold text-blue-700">{user.weeklyReferrals}</div>
-                    <div className="text-gray-500 text-lg font-medium mt-1">/{user.weeklyGoal}</div>
-                    <div className="text-gray-500 mt-1">Referrals this week</div>
-                  </div>
-                </div>
-
-                <div className="space-y-3 mt-6">
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <div className="text-sm font-medium">Progress</div>
-                      <div className="text-sm text-gray-500">
-                        {Math.round((user.weeklyReferrals / user.weeklyGoal) * 100)}%
-                      </div>
-                    </div>
-                    <Progress value={(user.weeklyReferrals / user.weeklyGoal) * 100} className="h-2.5" />
-                  </div>
-                </div>
-
-                <div className="mt-8">
-                  <h4 className="font-medium mb-4">Weekly Goals</h4>
-                  <div className="space-y-4">
-                    <div className="flex items-center">
-                      <div
-                        className={`h-5 w-5 rounded-full ${getProgressColor(user.weeklyReferrals >= 1)} mr-3 flex items-center justify-center text-white text-xs`}
-                      >
-                        {user.weeklyReferrals >= 1 && "✓"}
-                      </div>
-                      <span className={user.weeklyReferrals >= 1 ? "text-gray-900" : "text-gray-500"}>
-                        1 referral - 100 bonus points
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <div
-                        className={`h-5 w-5 rounded-full ${getProgressColor(user.weeklyReferrals >= 3)} mr-3 flex items-center justify-center text-white text-xs`}
-                      >
-                        {user.weeklyReferrals >= 3 && "✓"}
-                      </div>
-                      <span className={user.weeklyReferrals >= 3 ? "text-gray-900" : "text-gray-500"}>
-                        3 referrals - 350 bonus points
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <div
-                        className={`h-5 w-5 rounded-full ${getProgressColor(user.weeklyReferrals >= 5)} mr-3 flex items-center justify-center text-white text-xs`}
-                      >
-                        {user.weeklyReferrals >= 5 && "✓"}
-                      </div>
-                      <span className={user.weeklyReferrals >= 5 ? "text-gray-900" : "text-gray-500"}>
-                        5 referrals - 1000 bonus points
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Top Referrers Card */}
-          <motion.div custom={3} initial="hidden" animate="visible" variants={fadeIn}>
-            <Card className="border border-gray-100 shadow-sm">
-              <CardHeader className="border-b pb-4">
-                <div className="flex items-center">
-                  <Trophy className="h-5 w-5 text-amber-500 mr-2" />
-                  <CardTitle>Top Referrers</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-6">
-                  {topReferrers.map((referrer, index) => (
-                    <div key={referrer.id} className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div
-                          className={`flex items-center justify-center h-6 w-6 rounded-full ${index === 0 ? "bg-amber-100 text-amber-700" : index === 1 ? "bg-gray-100 text-gray-700" : "bg-amber-900/20 text-amber-900"} mr-3 text-sm font-semibold`}
-                        >
-                          #{index + 1}
-                        </div>
-                        <Avatar className="h-10 w-10 mr-3 border border-gray-200">
-                          <AvatarImage src={referrer.avatarUrl} alt={referrer.name} />
-                          <AvatarFallback>{referrer.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium text-gray-900">{referrer.name}</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-bold text-gray-900">{formatNumber(referrer.points)}</div>
-                        <div className="text-gray-500 text-xs">points</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="bg-amber-50 rounded-lg p-4 mt-8 border border-amber-100">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="font-bold text-xl text-amber-900">{user.rank}</div>
-                      <div className="text-amber-800 text-sm">Your rank</div>
-                    </div>
-
-                    <div className="text-right">
-                      <div className="font-bold text-xl text-amber-900">{formatNumber(user.rankupPoints)}</div>
-                      <div className="text-amber-800 text-sm">to next rank</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  <Button variant="outline" className="w-full border-gray-200 text-gray-700 hover:bg-gray-50">
-                    <Users className="mr-2 h-4 w-4" />
-                    View Full Leaderboard
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        {/* Recent Transactions Card */}
-        <motion.div custom={4} initial="hidden" animate="visible" variants={fadeIn}>
-          <Card className="border border-gray-100 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
-              <div className="flex items-center">
-                <Clock className="h-5 w-5 text-blue-600 mr-2" />
-                <CardTitle>Recent Transactions</CardTitle>
-              </div>
-              <Button variant="link" className="text-blue-600 font-medium">
-                View all
-              </Button>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                {recentTransactions.map((transaction) => (
-                  <div
-                    key={transaction.id}
-                    className="flex items-center justify-between pb-4 border-b border-gray-100 last:border-0 last:pb-0"
-                  >
-                    <div className="flex items-center">
-                      <Avatar className="h-10 w-10 mr-3 border border-gray-200">
-                        <AvatarImage src={transaction.avatarUrl} alt={transaction.name} />
-                        <AvatarFallback>{transaction.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium text-gray-900">{transaction.name}</div>
-                        <div className="text-gray-500 text-sm">{transaction.date}</div>
-                      </div>
-                    </div>
-                    <div className={`font-bold ${transaction.type === "credit" ? "text-green-600" : "text-red-600"}`}>
-                      {transaction.type === "credit" ? "+" : "-"}
-                      {formatCurrency(transaction.amount)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
+    <div style={{ display: "flex", alignItems: "center" }}>
+      {formattedValue.split("").map((digit, i) => (
+        <motion.span
+          key={`${i}-${digit}`}
+          style={{
+            display: "inline-block",
+            position: "relative",
+            width: digit === "." || digit === "," ? "8px" : "auto",
+            height: "1.5em",
+            overflow: "hidden",
+            textAlign: "center",
+          }}
+        >
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={`${i}-${digit}`}
+              initial={{
+                y: -100,
+                opacity: 0,
+                rotateX: -90,
+              }}
+              animate={{
+                y: 0,
+                opacity: 1,
+                rotateX: 0,
+                transition: {
+                  type: "spring",
+                  stiffness: 100,
+                  damping: 15,
+                  mass: 1,
+                  delay: i * 0.05, // Stagger the animations
+                  duration: duration / 1000,
+                },
+              }}
+              exit={{ y: 100, opacity: 0, rotateX: 90 }}
+              style={{
+                display: "inline-block",
+                transformStyle: "preserve-3d",
+                backfaceVisibility: "hidden",
+              }}
+            >
+              {digit}
+            </motion.span>
+          </AnimatePresence>
+        </motion.span>
+      ))}
     </div>
   );
 };
 
-export default Dashboard;
+// Get appropriate icon for each tier
+const getIconForTier = (tier: string) => {
+  switch (tier) {
+    case "Bronze":
+      return <Medal size={14} />;
+    case "Silver":
+      return <Target size={14} />;
+    case "Gold":
+      return <Trophy size={14} />;
+    case "Platinum":
+      return <Award size={14} />;
+    default:
+      return null;
+  }
+};
+
+const ARTIFICAL_DELAY = 0;
+const DashBoard = ({ userId }: ReferralCardProps) => {
+  const [isLoadingMock, setIsLoadingMock] = useState(true);
+  const [isRewardsDrawerOpen, setIsRewardsDrawerOpen] = useState(false);
+  const { data: userInfo, isLoading: apiLoading } = useBackendGET<UserInfoData>(`/refluent/userinfo/${userId}`, {});
+
+  // Simulate a loading delay to better demonstrate the skeleton animation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoadingMock(false);
+    }, ARTIFICAL_DELAY); // 2 second delay
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const isLoading = apiLoading || isLoadingMock;
+
+  // Define tier markers with their names and thresholds
+  const milestones = [
+    { name: "Bronze", value: 2 },
+    { name: "Silver", value: 5 },
+    { name: "Gold", value: 10 },
+    { name: "Platinum", value: 20 },
+  ];
+
+  const getCurrentMilestone = () => {
+    if (!userInfo) {
+      return {
+        currentMilestone: -1,
+        nextMilestone: 0,
+        referralsToNext: 2,
+        isMaxTier: false,
+        barFillPercentage: 0,
+        completePercentage: 0,
+      };
+    }
+
+    const referralCount = userInfo.successfulReferralCount || 0;
+
+    // Find the current milestone index
+    let currentMilestoneIndex = -1;
+    for (let i = 0; i < milestones.length; i++) {
+      if (referralCount >= milestones[i].value) {
+        currentMilestoneIndex = i;
+      } else {
+        break;
+      }
+    }
+
+    // Calculate progress percentage for the progress bar
+    let barFillPercentage = 0;
+
+    // Handle max tier case
+    if (currentMilestoneIndex === milestones.length - 1) {
+      return {
+        currentMilestone: currentMilestoneIndex,
+        nextMilestone: null,
+        referralsToNext: 0,
+        isMaxTier: true,
+        barFillPercentage: 100,
+        completePercentage: 100,
+      };
+    }
+
+    // Calculate next milestone details
+    const nextMilestoneIndex = currentMilestoneIndex + 1;
+    const currentValue = currentMilestoneIndex >= 0 ? milestones[currentMilestoneIndex].value : 0;
+
+    const nextValue = milestones[nextMilestoneIndex].value;
+    const referralsToNext = nextValue - referralCount;
+
+    // Calculate the progress bar fill percentage
+    barFillPercentage =
+      33.33 * currentMilestoneIndex + ((referralCount - currentValue) * 33.33) / (nextValue - currentValue);
+
+    // Ensure percentage is between 0 and 100
+    barFillPercentage = Math.max(0, Math.min(100, barFillPercentage));
+
+    return {
+      currentMilestone: currentMilestoneIndex,
+      nextMilestone: nextMilestoneIndex,
+      referralsToNext,
+      isMaxTier: false,
+      barFillPercentage,
+      completePercentage: (referralCount / 20) * 100,
+    };
+  };
+
+  const { currentMilestone, nextMilestone, referralsToNext, isMaxTier, barFillPercentage, completePercentage } =
+    getCurrentMilestone();
+
+  const getCurrentTierName = () => {
+    if (currentMilestone < 0) return "Starter";
+    return milestones[currentMilestone].name;
+  };
+
+  const getNextTierName = () => {
+    if (nextMilestone === null) return null;
+    return milestones[nextMilestone].name;
+  };
+
+  const openRewardsDrawer = () => {
+    setIsRewardsDrawerOpen(true);
+  };
+
+  const closeRewardsDrawer = () => {
+    setIsRewardsDrawerOpen(false);
+  };
+
+  return (
+    <PageContainer initial="initial" animate="animate" exit="exit" variants={pageVariants}>
+      <Card variants={cardVariants}>
+        <CardContent>
+          <AnimatePresence mode="wait">
+            {isLoading ? (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                style={{ flex: 1, display: "flex", flexDirection: "column" }}
+              >
+                <ProfileSkeleton />
+                <StatsSkeleton />
+                <MilestonesSkeleton />
+                <ActionButtonsSkeleton />
+                <HowItWorksSkeleton />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="content"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                style={{ flex: 1, display: "flex", flexDirection: "column" }}
+              >
+                {/* Profile Section */}
+                <ProfileSection>
+                  <Avatar>
+                    <UserSvgAvatar>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    </UserSvgAvatar>
+                  </Avatar>
+                  <div>
+                    <h2 style={{ margin: "0", fontSize: "1.25rem", fontWeight: 600 }}>
+                      {userInfo?.username || "User"}
+                    </h2>
+                  </div>
+                </ProfileSection>
+
+                {/* Stats Section */}
+                <StatsGrid>
+                  <StatCard>
+                    <StatLabel>Total cash</StatLabel>
+                    <StatValue>
+                      <RotatingDigits value={userInfo?.totalCash || 0} formatter={formatCurrency} duration={2000} />
+                    </StatValue>
+                  </StatCard>
+
+                  <StatCard>
+                    <StatLabel>Total coins</StatLabel>
+                    <StatValue>
+                      <RotatingDigits value={userInfo?.totalPoints || 0} formatter={formatNumber} duration={2000} />
+                    </StatValue>
+                  </StatCard>
+                </StatsGrid>
+
+                {/* Milestones Section */}
+                <MilestoneSection>
+                  <SectionTitleWrapper>
+                    <SectionTitle>Referral milestones</SectionTitle>
+                    <InfoIconButton onClick={openRewardsDrawer} aria-label="View tier rewards">
+                      <Info size={18} />
+                    </InfoIconButton>
+                  </SectionTitleWrapper>
+
+                  <ProgressCount>
+                    <CurrentCount>{userInfo?.successfulReferralCount || 0}</CurrentCount> referrals
+                    {currentMilestone >= 0 && (
+                      <span style={{ marginLeft: "auto" }}>
+                        Current tier: <span style={{ color: "#4a80f0" }}>{getCurrentTierName()}</span>
+                      </span>
+                    )}
+                  </ProgressCount>
+
+                  <ProgressBar>
+                    <ProgressLine>
+                      <ProgressFill
+                        width={barFillPercentage}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(barFillPercentage, 100)}%` }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                      />
+                    </ProgressLine>
+
+                    <MilestoneMarkers>
+                      {milestones.map((milestone, index) => {
+                        const isActive = isMaxTier
+                          ? true
+                          : index <= currentMilestone || (index === nextMilestone && barFillPercentage >= 50);
+                        const isAchieved = userInfo?.successfulReferralCount >= milestone.value;
+
+                        return (
+                          <MilestoneMarker key={index} tier={milestone.name} active={isActive} achieved={isAchieved}>
+                            {getIconForTier(milestone.name)}
+                            <MilestoneValue active={isActive}>{milestone.value}</MilestoneValue>
+                          </MilestoneMarker>
+                        );
+                      })}
+                    </MilestoneMarkers>
+                  </ProgressBar>
+
+                  <ProgressMessage>
+                    {isMaxTier ? (
+                      <div>You've reached the maximum tier! 🎉</div>
+                    ) : (
+                      <>
+                        <div>
+                          <NextGoal>{referralsToNext}</NextGoal> more referrals to {getNextTierName()}
+                        </div>
+                        <div>
+                          <span>{Math.round(completePercentage)}%</span> complete <ChevronRight size={16} />
+                        </div>
+                      </>
+                    )}
+                  </ProgressMessage>
+                </MilestoneSection>
+
+                {/* Action Buttons */}
+                <ActionButtonsGrid>
+                  <ActionButtonLink to="/refer" primary>
+                    Refer
+                  </ActionButtonLink>
+                  <ActionButton onClick={openRewardsDrawer}>Rewards</ActionButton>
+                </ActionButtonsGrid>
+
+                {/* How It Works Section */}
+                <HowItWorksSection>
+                  <HowItWorksTitle>HOW DOES IT WORK</HowItWorksTitle>
+                  <StepsList>
+                    <ConnectingLine />
+                    <Step>
+                      <StepIconWrapper>
+                        <StepNumber>1</StepNumber>
+                        <Share2 size={18} />
+                      </StepIconWrapper>
+                      <StepText>Share your referral link with friends</StepText>
+                    </Step>
+
+                    <Step>
+                      <StepIconWrapper>
+                        <StepNumber>2</StepNumber>
+                        <Users size={18} />
+                      </StepIconWrapper>
+                      <StepText>Your friends sign up using your link</StepText>
+                    </Step>
+
+                    <Step>
+                      <StepIconWrapper>
+                        <StepNumber>3</StepNumber>
+                        <Gift size={18} />
+                      </StepIconWrapper>
+                      <StepText>Both you and your friend earn rewards</StepText>
+                    </Step>
+                  </StepsList>
+                </HowItWorksSection>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </CardContent>
+      </Card>
+
+      {/* Bottom Drawer for Tier Rewards */}
+      <BottomDrawer isOpen={isRewardsDrawerOpen} onClose={closeRewardsDrawer}>
+        <TierRewardsInfo onClose={closeRewardsDrawer} showCloseButton={true} />
+      </BottomDrawer>
+    </PageContainer>
+  );
+};
+
+export default DashBoard;

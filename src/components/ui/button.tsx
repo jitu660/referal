@@ -1,45 +1,71 @@
-import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
-import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "../../lib/utils";
+import React from "react";
+import styled from "@emotion/styled";
+import { motion } from "framer-motion";
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-lg text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700",
-        secondary: "bg-secondary-500 text-white hover:bg-secondary-600 active:bg-secondary-700",
-        outline: "border border-border bg-transparent hover:bg-gray-50 text-text-primary",
-        ghost: "hover:bg-gray-100 text-text-primary",
-        link: "text-primary-500 underline-offset-4 hover:underline",
-      },
-      size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-12 rounded-lg px-8 text-base",
-        icon: "h-10 w-10",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-);
-
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children: React.ReactNode;
+  primary?: boolean;
+  disabled?: boolean;
+  fullWidth?: boolean;
+  size?: "sm" | "md" | "lg";
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button";
-    return <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />;
-  }
-);
-Button.displayName = "Button";
+const StyledButton = styled(motion.button)<ButtonProps>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: ${(props) => (props.size === "sm" ? "0.75rem" : props.size === "lg" ? "1.25rem" : "1rem")};
+  border-radius: 12px;
+  font-weight: ${(props) => props.theme.fontWeights.medium};
+  font-size: ${(props) =>
+    props.size === "sm"
+      ? props.theme.fontSizes.sm
+      : props.size === "lg"
+        ? props.theme.fontSizes.lg
+        : props.theme.fontSizes.md};
+  border: none;
+  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
+  opacity: ${(props) => (props.disabled ? 0.6 : 1)};
+  width: ${(props) => (props.fullWidth ? "100%" : "auto")};
 
-export { Button, buttonVariants };
+  background-color: ${(props) => (props.primary ? props.theme.colors.blue[500] : "white")};
+  color: ${(props) => (props.primary ? "white" : props.theme.colors.text.primary)};
+  border: 1px solid ${(props) => (props.primary ? "transparent" : props.theme.colors.gray[200])};
+
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px ${(props) => props.theme.colors.blue[200]};
+  }
+`;
+
+const Button = ({
+  children,
+  primary = false,
+  disabled = false,
+  fullWidth = false,
+  size = "md",
+  ...props
+}: ButtonProps) => {
+  return (
+    <StyledButton
+      primary={primary}
+      disabled={disabled}
+      fullWidth={fullWidth}
+      size={size}
+      whileHover={{ scale: disabled ? 1 : 1.05 }}
+      whileTap={{ scale: disabled ? 1 : 0.98 }}
+      transition={{
+        type: "spring",
+        stiffness: 400,
+        damping: 15,
+      }}
+      {...props}
+    >
+      {children}
+    </StyledButton>
+  );
+};
+
+export default Button;

@@ -12,9 +12,8 @@ export interface MockRequest {
 }
 
 export async function mockFetch({ url, method, body }: MockRequest) {
-  console.log(url);
   // Delay to simulate network latency
-  // await new Promise((resolve) => setTimeout(resolve, 400));
+  // await new Promise((resolve) => setTimeout(resolve, 2000));
 
   // Mock for onboarding a user
   if (url.endsWith("/protected/onboard") && method === "POST") {
@@ -59,7 +58,7 @@ export async function mockFetch({ url, method, body }: MockRequest) {
     return {
       totalCash: 300,
       totalPoints: 1000,
-      successfulReferralCount: 10,
+      successfulReferralCount: 12,
       badgeUrl: "https://example.com/badge.png",
       username: "MockUser",
     };

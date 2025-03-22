@@ -14,12 +14,12 @@ export interface MockRequest {
 export async function mockFetch({ url, method, body }: MockRequest) {
   console.log(url);
   // Delay to simulate network latency
-  await new Promise((resolve) => setTimeout(resolve, 400));
+  // await new Promise((resolve) => setTimeout(resolve, 400));
 
   // Mock for onboarding a user
   if (url.endsWith("/protected/onboard") && method === "POST") {
     return {
-      userId: "mockUser123",
+      userId: "97fffc35b648278c",
       referralCode: "MOCKREFCODE",
       clientId: body?.clientId,
     };
@@ -59,10 +59,9 @@ export async function mockFetch({ url, method, body }: MockRequest) {
     return {
       totalCash: 300,
       totalPoints: 1000,
-      successfulReferralCount: 6,
+      successfulReferralCount: 10,
       badgeUrl: "https://example.com/badge.png",
       username: "MockUser",
-      referralCode: "FRIEND2023",
     };
   }
 

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { UserPlus, Gift, DollarSign, Coins, Award, Copy, Share2, ArrowRight, CheckCircle } from "lucide-react";
+import { Share2, ChevronRight, Users, Gift, Award, Medal, Target, Trophy } from "lucide-react";
 import { useBackendGET } from "../api/useBackend";
 import styled from "@emotion/styled";
 import { formatNumber, formatCurrency } from "../lib/utils";
@@ -45,179 +45,98 @@ const cardVariants = {
   exit: { opacity: 0, y: 20 },
 };
 
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  animate: (i: number) => ({
-    opacity: 1,
-    y: 0,
+// Additional animation for skeletons
+const skeletonPulse = {
+  initial: { opacity: 0.6 },
+  animate: {
+    opacity: [0.6, 0.8, 0.6],
     transition: {
-      type: "spring",
-      damping: 25,
-      delay: i * 0.05,
+      repeat: Infinity,
+      duration: 1.5,
+      ease: "easeInOut",
     },
-  }),
-  exit: { opacity: 0, y: 20 },
+  },
 };
 
 // Styled Components
 const PageContainer = styled(motion.div)`
-  min-height: 100vh;
   background-color: ${(props) => props.theme.colors.background};
-  padding: 1.5rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
 
   @media (min-width: ${(props) => props.theme.breakpoints.sm}) {
-    padding: 2rem;
+    padding: 1.5rem;
   }
 `;
 
-const ContentContainer = styled.div`
-  max-width: 600px;
-  margin: 0 auto;
-`;
-
-const Header = styled(motion.div)`
-  margin-bottom: 2rem;
-  text-align: center;
-`;
-
-const Title = styled.h1`
-  font-size: ${(props) => props.theme.fontSizes["2xl"]};
-  font-weight: ${(props) => props.theme.fontWeights.bold};
-  color: ${(props) => props.theme.colors.text.primary};
-  margin-bottom: 0.5rem;
-`;
-
-const Subtitle = styled.p`
-  color: ${(props) => props.theme.colors.text.secondary};
-  font-size: ${(props) => props.theme.fontSizes.md};
-`;
-
 const Card = styled(motion.div)`
-  background: ${(props) => props.theme.colors.surface};
-  border-radius: ${(props) => props.theme.radii.xl};
-  box-shadow: ${(props) => props.theme.shadows.card};
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   overflow: hidden;
-  margin-bottom: 1.5rem;
-  border: 1px solid ${(props) => props.theme.colors.gray[100]};
-`;
-
-const CardHeader = styled.div`
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid ${(props) => props.theme.colors.gray[100]};
+  width: 100%;
+  max-width: 100%; // Full width for mobile
+  margin: 0 auto;
+  flex: 1;
   display: flex;
-  align-items: center;
-`;
+  flex-direction: column;
 
-const CardTitle = styled.h2`
-  font-size: ${(props) => props.theme.fontSizes.lg};
-  font-weight: ${(props) => props.theme.fontWeights.semibold};
-  margin: 0;
+  @media (min-width: ${(props) => props.theme.breakpoints.md}) {
+    max-width: 480px; // Constrained on larger screens
+  }
 `;
 
 const CardContent = styled.div`
   padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 `;
 
-const ProfileHeader = styled.div`
-  background: linear-gradient(
-    135deg,
-    ${(props) => props.theme.colors.blue[600]},
-    ${(props) => props.theme.colors.primary[600]}
-  );
-  padding: 2rem 1.5rem;
-  color: white;
-`;
-
-const ProfileDetails = styled.div`
+const ProfileSection = styled.div`
   display: flex;
   align-items: center;
+  margin-bottom: 1.5rem;
 `;
 
 const Avatar = styled.div`
-  width: 4rem;
-  height: 4rem;
+  width: 3.5rem;
+  height: 3.5rem;
   border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  background-color: ${(props) => props.theme.colors.gray[100]};
   overflow: hidden;
-  margin-right: 1rem;
+  margin-right: 1.5rem;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  font-weight: ${(props) => props.theme.fontWeights.bold};
-`;
-
-const AvatarImage = styled.img`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 `;
 
 const UserSvgAvatar = styled.div`
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-
-  svg {
-    width: 60%;
-    height: 60%;
-  }
-`;
-
-const UserInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-`;
-
-const UserGreeting = styled.p`
-  font-size: ${(props) => props.theme.fontSizes.sm};
-  opacity: 0.9;
-  margin: 0 0 0.25rem 0;
-  line-height: 1;
-`;
-
-const Username = styled.h3`
-  font-size: ${(props) => props.theme.fontSizes.xl};
-  font-weight: ${(props) => props.theme.fontWeights.bold};
-  margin: 0;
-  line-height: 1.2;
+  width: 60%;
+  height: 60%;
+  color: ${(props) => props.theme.colors.gray[400]};
 `;
 
 const StatsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.25rem;
-  padding: 0.25rem;
-  background-color: ${(props) => props.theme.colors.gray[50]};
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 `;
 
-const StatItem = styled(motion.div)`
+const StatCard = styled.div`
+  background-color: ${(props) => props.theme.colors.blue[50]};
+  border-radius: 16px;
   padding: 1.25rem;
-  background-color: ${(props) => props.theme.colors.surface};
-  border-radius: ${(props) => props.theme.radii.lg};
-  box-shadow: ${(props) => props.theme.shadows.sm};
 `;
 
 const StatLabel = styled.div`
-  display: flex;
-  align-items: center;
-  color: ${(props) => props.theme.colors.text.secondary};
-  font-size: ${(props) => props.theme.fontSizes.sm};
-  margin-bottom: 0.25rem;
-`;
-
-const IconWrapper = styled.div`
-  margin-right: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   color: ${(props) => props.theme.colors.blue[600]};
+  font-size: ${(props) => props.theme.fontSizes.sm};
+  font-weight: ${(props) => props.theme.fontWeights.medium};
+  margin-bottom: 0.5rem;
 `;
 
 const StatValue = styled.div`
@@ -226,580 +145,736 @@ const StatValue = styled.div`
   color: ${(props) => props.theme.colors.text.primary};
 `;
 
-const ProgressContainer = styled.div`
-  padding-top: 1.5rem;
-`;
-
-const ProgressInfo = styled.div`
-  text-align: center;
+const MilestoneSection = styled.div`
+  background-color: ${(props) => props.theme.colors.blue[50]};
+  border-radius: 16px;
+  padding: 1.5rem;
   margin-bottom: 1.5rem;
 `;
 
-const ProgressLabel = styled.div`
-  font-size: ${(props) => props.theme.fontSizes.sm};
-  color: ${(props) => props.theme.colors.text.secondary};
-  margin-bottom: 0.25rem;
+const SectionTitle = styled.h2`
+  font-size: ${(props) => props.theme.fontSizes.md};
+  font-weight: ${(props) => props.theme.fontWeights.semibold};
+  color: ${(props) => props.theme.colors.blue[600]};
+  margin: 0 0 1rem 0;
 `;
 
-const ProgressCounter = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const CurrentValue = styled.span`
-  font-size: ${(props) => props.theme.fontSizes["2xl"]};
-  font-weight: ${(props) => props.theme.fontWeights.bold};
-  color: ${(props) => props.theme.colors.text.primary};
-  margin-right: 0.5rem;
-`;
-
-const TargetValue = styled.span`
-  font-size: ${(props) => props.theme.fontSizes.sm};
-  color: ${(props) => props.theme.colors.text.secondary};
-`;
-
-const ProgressBarContainer = styled.div`
+const ProgressBar = styled.div`
   position: relative;
-  margin-bottom: 2rem;
+  margin: 1.5rem 0 1rem;
 `;
 
-const ProgressBarBackground = styled.div`
-  height: 0.75rem;
-  background-color: ${(props) => props.theme.colors.gray[100]};
-  border-radius: 9999px;
+const ProgressLine = styled.div`
+  height: 3px;
+  background-color: ${(props) => props.theme.colors.gray[200]};
   position: relative;
-  overflow: hidden;
+  width: 100%;
+  border-radius: 3px;
 `;
 
-const ProgressBarFill = styled(motion.div)`
+const ProgressFill = styled(motion.div)<{ width: number }>`
   height: 100%;
-  background: linear-gradient(
-    to right,
-    ${(props) => props.theme.colors.blue[500]},
-    ${(props) => props.theme.colors.primary[500]},
-    ${(props) => props.theme.colors.secondary[500]}
-  );
-  border-radius: 9999px;
+  width: ${(props) => `${Math.min(Math.max(props.width, 0), 100)}%`};
+  background-color: ${(props) => props.theme.colors.blue[500]};
   position: absolute;
-  top: 0;
   left: 0;
+  top: 0;
+  border-radius: 3px;
 `;
 
-const ProgressMarkers = styled.div`
+const MilestoneMarkers = styled.div`
   display: flex;
   justify-content: space-between;
-  margin-top: 0.75rem;
+  width: 100%;
   position: relative;
+  margin-top: -12px;
 `;
 
-const ProgressMarker = styled.div<{ isActive: boolean }>`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
-const MarkerDot = styled.div<{ isActive: boolean }>`
-  width: 1.25rem;
-  height: 1.25rem;
+const MilestoneMarker = styled.div<{ active: boolean; tier: string; achieved?: boolean }>`
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
-  background-color: ${(props) =>
-    props.isActive ? "linear-gradient(135deg, #60a5fa, #4f4fff)" : props.theme.colors.gray[200]};
-  color: ${(props) => (props.isActive ? "white" : props.theme.colors.gray[500])};
-  box-shadow: ${(props) => (props.isActive ? "0 0 15px rgba(79, 79, 255, 0.4)" : "none")};
-  transition: all 0.3s ease;
-  ${(props) =>
-    props.isActive &&
-    `
-    animation: pulse 2s infinite;
-  `}
+  font-size: 10px;
+  position: relative;
+  z-index: 1;
+  background-color: ${(props) => {
+    if (!props.active) return props.theme.colors.gray[200];
+
+    switch (props.tier) {
+      case "Bronze":
+        return "#CD7F32"; // Bronze color
+      case "Silver":
+        return "#C0C0C0"; // Silver color
+      case "Gold":
+        return "#FFD700"; // Gold color
+      case "Platinum":
+        return "#E5E4E2"; // Platinum color
+      default:
+        return props.theme.colors.blue[500];
+    }
+  }};
+  color: white;
+  border: ${(props) => (props.achieved ? "2px solid #4a80f0" : "none")};
+  box-shadow: ${(props) => (props.achieved ? "0 0 4px rgba(74, 128, 240, 0.5)" : "none")};
 `;
 
-const MarkerLabel = styled.div`
-  margin-top: 0.5rem;
-  font-size: 0.75rem;
-  color: ${(props) => props.theme.colors.text.secondary};
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
-const MarkerTitle = styled.span<{ isActive: boolean }>`
-  font-weight: ${(props) => (props.isActive ? props.theme.fontWeights.semibold : props.theme.fontWeights.normal)};
-  color: ${(props) => (props.isActive ? props.theme.colors.text.primary : props.theme.colors.text.secondary)};
-`;
-
-const MarkerValue = styled.span`
-  margin-top: 0.25rem;
+const MilestoneValue = styled.div<{ active: boolean }>`
+  font-size: 10px;
+  font-weight: ${(props) => props.theme.fontWeights.semibold};
+  color: ${(props) => (props.active ? props.theme.colors.blue[600] : props.theme.colors.gray[400])};
+  margin-top: 4px;
+  text-align: center;
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
 `;
 
 const ProgressMessage = styled.div`
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: ${(props) => props.theme.fontSizes.sm};
+  color: ${(props) => props.theme.colors.text.secondary};
+  margin-top: 0.75rem;
+
+  span {
+    color: ${(props) => props.theme.colors.blue[600]};
+    font-weight: ${(props) => props.theme.fontWeights.medium};
+  }
+`;
+
+const ProgressCount = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  font-size: ${(props) => props.theme.fontSizes.sm};
+  font-weight: ${(props) => props.theme.fontWeights.medium};
   color: ${(props) => props.theme.colors.text.secondary};
 `;
 
-const ActionGrid = styled(motion.div)`
+const CurrentCount = styled.span`
+  font-size: ${(props) => props.theme.fontSizes.xl};
+  color: ${(props) => props.theme.colors.text.primary};
+  font-weight: ${(props) => props.theme.fontWeights.bold};
+  margin-right: 0.25rem;
+`;
+
+const NextGoal = styled.span`
+  color: ${(props) => props.theme.colors.blue[600]};
+`;
+
+const ActionButtonsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 1rem;
   margin-bottom: 1.5rem;
 `;
 
-const ActionButton = styled(motion.button)<{ isPrimary?: boolean }>`
+const ActionButton = styled.button<{ primary?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  border-radius: ${(props) => props.theme.radii.lg};
+  border-radius: 12px;
   font-weight: ${(props) => props.theme.fontWeights.medium};
   font-size: ${(props) => props.theme.fontSizes.md};
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
-  height: 3.5rem;
-  width: 100%;
 
-  ${(props) =>
-    props.isPrimary
-      ? `
-    background: linear-gradient(135deg, ${props.theme.colors.blue[600]}, ${props.theme.colors.primary[600]});
-    color: white;
-    
-    &:hover {
-      background: linear-gradient(135deg, ${props.theme.colors.blue[700]}, ${props.theme.colors.primary[700]});
-    }
-  `
-      : `
-    background-color: ${props.theme.colors.surface};
-    color: ${props.theme.colors.text.primary};
-    border: 1px solid ${props.theme.colors.gray[200]};
-    
-    &:hover {
-      background-color: ${props.theme.colors.gray[50]};
-    }
-  `}
+  background-color: ${(props) => (props.primary ? props.theme.colors.blue[500] : "white")};
+  color: ${(props) => (props.primary ? "white" : props.theme.colors.text.primary)};
+  border: 1px solid ${(props) => (props.primary ? "transparent" : props.theme.colors.gray[200])};
+
+  &:hover {
+    background-color: ${(props) => (props.primary ? props.theme.colors.blue[600] : props.theme.colors.gray[50])};
+  }
 `;
 
-const ActionButtonIcon = styled.span<{ isPrimary?: boolean }>`
-  margin-right: 0.5rem;
-  display: flex;
-  align-items: center;
-  color: ${(props) => (props.isPrimary ? "white" : props.theme.colors.blue[600])};
+const HowItWorksSection = styled.div`
+  background-color: ${(props) => props.theme.colors.blue[50]};
+  border-radius: 16px;
+  padding: 1.5rem;
 `;
 
-const ReferralCodeContainer = styled.div`
-  background-color: ${(props) => props.theme.colors.gray[50]};
-  border: 1px dashed ${(props) => props.theme.colors.gray[200]};
-  border-radius: ${(props) => props.theme.radii.lg};
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-`;
-
-const ReferralCode = styled.div`
-  font-family: monospace;
+const HowItWorksTitle = styled.h2`
   font-size: ${(props) => props.theme.fontSizes.lg};
-  font-weight: ${(props) => props.theme.fontWeights.semibold};
-  letter-spacing: 0.05em;
-  color: ${(props) => props.theme.colors.text.primary};
+  font-weight: ${(props) => props.theme.fontWeights.bold};
+  color: ${(props) => props.theme.colors.blue[600]};
+  margin: 0 0 1.5rem 0;
+  text-transform: uppercase;
 `;
 
-const ActionButtons = styled.div`
-  display: flex;
-  gap: 0.5rem;
-`;
-
-const IconButton = styled(motion.button)<{ variant?: "primary" | "secondary" }>`
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: ${(props) => props.theme.radii.md};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  cursor: pointer;
-
-  ${(props) =>
-    props.variant === "primary"
-      ? `
-    background: linear-gradient(135deg, ${props.theme.colors.blue[600]}, ${props.theme.colors.primary[600]});
-    color: white;
-    
-    &:hover {
-      background: linear-gradient(135deg, ${props.theme.colors.blue[700]}, ${props.theme.colors.primary[700]});
-    }
-  `
-      : `
-    background-color: ${props.theme.colors.surface};
-    color: ${props.theme.colors.blue[600]};
-    border: 1px solid ${props.theme.colors.gray[200]};
-    
-    &:hover {
-      background-color: ${props.theme.colors.gray[50]};
-    }
-  `}
-`;
-
-const HowItWorksContainer = styled.div`
+const StepsList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  position: relative;
 `;
 
-const StepContainer = styled(motion.div)`
+const Step = styled.div`
   display: flex;
   align-items: flex-start;
+  position: relative;
+  margin-bottom: 2rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 `;
 
-const StepIconContainer = styled.div`
+const StepIconWrapper = styled.div`
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
-  background-color: ${(props) => props.theme.colors.blue[100]};
+  background-color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${(props) => props.theme.colors.blue[600]};
   margin-right: 1rem;
-  flex-shrink: 0;
+  color: ${(props) => props.theme.colors.blue[500]};
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 2;
 `;
 
-const StepContent = styled.div``;
-
-const StepTitle = styled.h3`
-  font-size: ${(props) => props.theme.fontSizes.md};
-  font-weight: ${(props) => props.theme.fontWeights.semibold};
-  margin: 0 0 0.25rem 0;
-  color: ${(props) => props.theme.colors.text.primary};
-`;
-
-const StepDescription = styled.p`
-  font-size: ${(props) => props.theme.fontSizes.sm};
-  color: ${(props) => props.theme.colors.text.secondary};
-  margin: 0;
-`;
-
-const StepArrow = styled.div`
-  display: flex;
-  justify-content: center;
-  color: ${(props) => props.theme.colors.gray[300]};
-  margin: 0.5rem 0;
-`;
-
-const Toast = styled(motion.div)`
-  background: linear-gradient(
-    135deg,
-    ${(props) => props.theme.colors.blue[600]},
-    ${(props) => props.theme.colors.primary[600]}
-  );
+const StepNumber = styled.div`
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: ${(props) => props.theme.colors.blue[500]};
   color: white;
-  padding: 0.75rem 1rem;
-  border-radius: ${(props) => props.theme.radii.lg};
+  font-size: 12px;
+  font-weight: bold;
   display: flex;
   align-items: center;
-  box-shadow: ${(props) => props.theme.shadows.lg};
+  justify-content: center;
 `;
 
-const ToastIcon = styled.span`
-  margin-right: 0.5rem;
-  display: flex;
-  align-items: center;
+const StepText = styled.div`
+  font-size: ${(props) => props.theme.fontSizes.md};
+  color: ${(props) => props.theme.colors.text.primary};
+  padding-top: 0.25rem;
 `;
+
+const ConnectingLine = styled.div`
+  position: absolute;
+  top: 0;
+  left: 1.25rem;
+  width: 2px;
+  height: 100%;
+  background-color: ${(props) => props.theme.colors.blue[300]};
+  z-index: 0;
+`;
+
+// Skeleton components
+const SkeletonBox = styled(motion.div)`
+  background-color: ${(props) => props.theme.colors.gray[200]};
+  border-radius: 8px;
+`;
+
+const SkeletonAvatar = styled(SkeletonBox)`
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  margin-right: 1.5rem;
+`;
+
+const SkeletonText = styled(SkeletonBox)<{ width?: string }>`
+  height: 1.25rem;
+  width: ${(props) => props.width || "100%"};
+  margin-bottom: 0.5rem;
+`;
+
+const SkeletonStatCard = styled(SkeletonBox)`
+  height: 5rem;
+  padding: 1rem;
+  border-radius: 16px;
+`;
+
+const SkeletonProgressBar = styled(SkeletonBox)`
+  height: 3px;
+  width: 100%;
+  margin: 1.5rem 0;
+`;
+
+const SkeletonMarker = styled(SkeletonBox)`
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+`;
+
+const SkeletonButton = styled(SkeletonBox)`
+  height: 3rem;
+  border-radius: 12px;
+`;
+
+// Loading skeleton components
+const ProfileSkeleton = () => (
+  <ProfileSection>
+    <SkeletonAvatar variants={skeletonPulse} initial="initial" animate="animate" />
+    <div>
+      <SkeletonText width="150px" variants={skeletonPulse} initial="initial" animate="animate" />
+    </div>
+  </ProfileSection>
+);
+
+const StatsSkeleton = () => (
+  <StatsGrid>
+    <SkeletonStatCard variants={skeletonPulse} initial="initial" animate="animate" />
+    <SkeletonStatCard variants={skeletonPulse} initial="initial" animate="animate" />
+  </StatsGrid>
+);
+
+const MilestonesSkeleton = () => (
+  <MilestoneSection>
+    <SkeletonText width="40%" variants={skeletonPulse} initial="initial" animate="animate" />
+    <div style={{ margin: "1.5rem 0" }}>
+      <SkeletonText width="60%" variants={skeletonPulse} initial="initial" animate="animate" />
+    </div>
+    <SkeletonProgressBar variants={skeletonPulse} initial="initial" animate="animate" />
+    <div style={{ display: "flex", justifyContent: "space-between", margin: "1rem 0" }}>
+      {[1, 2, 3, 4].map((i) => (
+        <SkeletonMarker key={i} variants={skeletonPulse} initial="initial" animate="animate" />
+      ))}
+    </div>
+    <div style={{ display: "flex", justifyContent: "space-between", marginTop: "1rem" }}>
+      <SkeletonText width="30%" variants={skeletonPulse} initial="initial" animate="animate" />
+      <SkeletonText width="20%" variants={skeletonPulse} initial="initial" animate="animate" />
+    </div>
+  </MilestoneSection>
+);
+
+const ActionButtonsSkeleton = () => (
+  <ActionButtonsGrid>
+    <SkeletonButton variants={skeletonPulse} initial="initial" animate="animate" />
+    <SkeletonButton variants={skeletonPulse} initial="initial" animate="animate" />
+  </ActionButtonsGrid>
+);
+
+const HowItWorksSkeleton = () => (
+  <HowItWorksSection>
+    <SkeletonText width="80%" variants={skeletonPulse} initial="initial" animate="animate" />
+    <div style={{ marginTop: "2rem" }}>
+      <div style={{ display: "flex", alignItems: "center", marginBottom: "1rem" }}>
+        <SkeletonMarker variants={skeletonPulse} initial="initial" animate="animate" />
+        <SkeletonText
+          width="70%"
+          style={{ marginLeft: "1rem" }}
+          variants={skeletonPulse}
+          initial="initial"
+          animate="animate"
+        />
+      </div>
+    </div>
+  </HowItWorksSection>
+);
+
+// Framer Motion Rotating Digits Component
+const RotatingDigits = ({
+  value,
+  formatter,
+  duration = 3000,
+}: {
+  value: number;
+  formatter: (val: number) => string;
+  duration?: number;
+}) => {
+  const formattedValue = formatter(value);
+
+  return (
+    <div style={{ display: "flex", alignItems: "center" }}>
+      {formattedValue.split("").map((digit, i) => (
+        <motion.span
+          key={`${i}-${digit}`}
+          style={{
+            display: "inline-block",
+            position: "relative",
+            width: digit === "." || digit === "," ? "8px" : "auto",
+            height: "1.5em",
+            overflow: "hidden",
+            textAlign: "center",
+          }}
+        >
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={`${i}-${digit}`}
+              initial={{
+                y: -100,
+                opacity: 0,
+                rotateX: -90,
+              }}
+              animate={{
+                y: 0,
+                opacity: 1,
+                rotateX: 0,
+                transition: {
+                  type: "spring",
+                  stiffness: 100,
+                  damping: 15,
+                  mass: 1,
+                  delay: i * 0.05, // Stagger the animations
+                  duration: duration / 1000,
+                },
+              }}
+              exit={{ y: 100, opacity: 0, rotateX: 90 }}
+              style={{
+                display: "inline-block",
+                transformStyle: "preserve-3d",
+                backfaceVisibility: "hidden",
+              }}
+            >
+              {digit}
+            </motion.span>
+          </AnimatePresence>
+        </motion.span>
+      ))}
+    </div>
+  );
+};
+
+// Get appropriate icon for each tier
+const getIconForTier = (tier: string) => {
+  switch (tier) {
+    case "Bronze":
+      return <Medal size={14} />;
+    case "Silver":
+      return <Target size={14} />;
+    case "Gold":
+      return <Trophy size={14} />;
+    case "Platinum":
+      return <Award size={14} />;
+    default:
+      return null;
+  }
+};
+
+// Calculate the overall progress percentage for the bar fill
+const calculateProgressBarFill = (referralCount, milestones) => {
+  // If no referrals, return 0%
+  if (referralCount === 0) return 0;
+
+  // If at or above max tier, return 100%
+  if (referralCount >= milestones[milestones.length - 1].value) return 100;
+
+  // Find the position between milestones
+  for (let i = 0; i < milestones.length; i++) {
+    // If we're below this milestone
+    if (referralCount < milestones[i].value) {
+      // If it's the first milestone, calculate percentage of the way there
+      if (i === 0) {
+        return Math.floor((referralCount / milestones[0].value) * 25);
+      }
+
+      // For milestones after the first:
+      // Calculate how far we are between previous and current milestone
+      const prevMilestone = milestones[i - 1].value;
+      const nextMilestone = milestones[i].value;
+      const progressInSegment = referralCount - prevMilestone;
+      const segmentSize = nextMilestone - prevMilestone;
+      const segmentPercentage = Math.floor((progressInSegment / segmentSize) * 25);
+
+      // Each milestone represents 25% of the bar (4 milestones = 100%)
+      return Math.min(i * 25 + segmentPercentage, 99);
+    }
+  }
+
+  // Fallback (shouldn't reach here)
+  return 100;
+};
 
 const ReferralPage = ({ userId }: ReferralCardProps) => {
-  const { data: userInfo } = useBackendGET<UserInfoData>(`/refluent/userinfo/${userId}`, {});
-  const [showToast, setShowToast] = useState(false);
+  const [isLoadingMock, setIsLoadingMock] = useState(true);
+  const { data: userInfo, isLoading: apiLoading } = useBackendGET<UserInfoData>(`/refluent/userinfo/${userId}`, {});
+
+  // Simulate a loading delay to better demonstrate the skeleton animation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoadingMock(false);
+    }, 2000); // 2 second delay
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const isLoading = apiLoading || isLoadingMock;
 
   // Define tier markers with their names and thresholds
-  const tiers = [
-    { name: "Bronze", value: 2, color: "#CD7F32" },
-    { name: "Silver", value: 5, color: "#C0C0C0" },
-    { name: "Gold", value: 10, color: "#FFD700" },
-    { name: "Platinum", value: 20, color: "#E5E4E2" },
+  const milestones = [
+    { name: "Bronze", value: 2 },
+    { name: "Silver", value: 5 },
+    { name: "Gold", value: 10 },
+    { name: "Platinum", value: 20 },
   ];
 
-  // Calculate milestone progress
-  const getMilestoneData = () => {
-    if (!userInfo) return { percentage: 0, currentTier: null, nextTier: tiers[0] };
+  // Calculate current milestone progress with corrected logic
+  const getCurrentMilestone = () => {
+    if (!userInfo)
+      return {
+        percentage: 0,
+        currentMilestone: -1,
+        nextMilestone: 0,
+        referralsToNext: 2,
+        barFillPercentage: 0,
+      };
 
     const referralCount = userInfo.successfulReferralCount || 0;
 
-    // Find current tier
-    let currentTierIndex = -1;
-    for (let i = 0; i < tiers.length; i++) {
-      if (referralCount < tiers[i].value) {
-        currentTierIndex = i - 1;
+    // Calculate the visual percentage for the progress bar fill
+    const barFillPercentage = calculateProgressBarFill(referralCount, milestones);
+
+    // Special case: If user has 0 referrals
+    if (referralCount === 0) {
+      return {
+        percentage: 0,
+        currentMilestone: -1,
+        nextMilestone: 0,
+        referralsToNext: milestones[0].value,
+        isMaxTier: false,
+        barFillPercentage,
+      };
+    }
+
+    // Find the milestone the user is currently at or has passed
+    let currentMilestoneIndex = -1;
+
+    // Loop through milestones to find where this user falls
+    for (let i = milestones.length - 1; i >= 0; i--) {
+      if (referralCount >= milestones[i].value) {
+        currentMilestoneIndex = i;
         break;
       }
     }
 
-    // If above the highest tier
-    if (currentTierIndex === -1 && referralCount >= tiers[tiers.length - 1].value) {
+    // If we found a valid milestone and it's not the highest tier
+    if (currentMilestoneIndex >= 0 && currentMilestoneIndex < milestones.length - 1) {
+      const currentValue = milestones[currentMilestoneIndex].value;
+      const nextValue = milestones[currentMilestoneIndex + 1].value;
+      const totalRange = nextValue - currentValue;
+      const userProgress = referralCount - currentValue;
+      const percentage = Math.min(Math.floor((userProgress / totalRange) * 100), 99);
+      const referralsToNext = nextValue - referralCount;
+
       return {
-        percentage: 100,
-        currentTier: tiers[tiers.length - 1],
-        nextTier: null,
+        percentage,
+        currentMilestone: currentMilestoneIndex,
+        nextMilestone: currentMilestoneIndex + 1,
+        referralsToNext,
+        isMaxTier: false,
+        barFillPercentage,
       };
     }
 
-    // If below the first tier
-    if (currentTierIndex === -1) {
-      const nextTier = tiers[0];
-      const percentage = (referralCount / nextTier.value) * 100;
-      return { percentage, currentTier: null, nextTier };
+    // If at or above the highest tier
+    if (currentMilestoneIndex === milestones.length - 1) {
+      return {
+        percentage: 100,
+        currentMilestone: currentMilestoneIndex,
+        nextMilestone: null,
+        referralsToNext: 0,
+        isMaxTier: true,
+        barFillPercentage,
+      };
     }
 
-    const currentTier = tiers[currentTierIndex];
-    const nextTier = tiers[currentTierIndex + 1];
-    const prevValue = currentTierIndex > 0 ? tiers[currentTierIndex - 1].value : 0;
-    const percentage = ((referralCount - prevValue) / (nextTier.value - prevValue)) * 100;
+    // If below the first tier but has some referrals
+    const firstMilestoneValue = milestones[0].value;
+    const percentage = Math.min(Math.floor((referralCount / firstMilestoneValue) * 100), 99);
+    const referralsToNext = firstMilestoneValue - referralCount;
 
-    return { percentage, currentTier, nextTier };
+    return {
+      percentage,
+      currentMilestone: -1,
+      nextMilestone: 0,
+      referralsToNext,
+      isMaxTier: false,
+      barFillPercentage,
+    };
   };
 
-  const { percentage, currentTier, nextTier } = getMilestoneData();
+  const { percentage, currentMilestone, nextMilestone, referralsToNext, isMaxTier, barFillPercentage } =
+    getCurrentMilestone();
 
-  // Copy referral code to clipboard
-  const copyReferralCode = () => {
-    if (userInfo?.referralCode) {
-      navigator.clipboard.writeText(userInfo.referralCode);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-    }
+  const getCurrentTierName = () => {
+    if (currentMilestone < 0) return "Starter";
+    return milestones[currentMilestone].name;
+  };
+
+  const getNextTierName = () => {
+    if (nextMilestone === null) return null;
+    return milestones[nextMilestone].name;
   };
 
   return (
     <PageContainer initial="initial" animate="animate" exit="exit" variants={pageVariants}>
-      <ContentContainer>
-        {/* Header */}
-        <Header variants={cardVariants}>
-          <Title>Refer & Earn Rewards</Title>
-          <Subtitle>Invite friends and boost your rewards with our tiered program</Subtitle>
-        </Header>
+      <Card variants={cardVariants}>
+        <CardContent>
+          <AnimatePresence mode="wait">
+            {isLoading ? (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                style={{ flex: 1, display: "flex", flexDirection: "column" }}
+              >
+                <ProfileSkeleton />
+                <StatsSkeleton />
+                <MilestonesSkeleton />
+                <ActionButtonsSkeleton />
+                <HowItWorksSkeleton />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="content"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                style={{ flex: 1, display: "flex", flexDirection: "column" }}
+              >
+                {/* Profile Section */}
+                <ProfileSection>
+                  <Avatar>
+                    <UserSvgAvatar>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    </UserSvgAvatar>
+                  </Avatar>
+                  <div>
+                    <h2 style={{ margin: "0", fontSize: "1.25rem", fontWeight: 600 }}>
+                      {userInfo?.username || "User"}
+                    </h2>
+                  </div>
+                </ProfileSection>
 
-        {/* User Profile Card */}
-        <Card variants={cardVariants}>
-          <ProfileHeader>
-            <ProfileDetails>
-              <Avatar>
-                {userInfo?.badgeUrl ? (
-                  <AvatarImage src={userInfo.badgeUrl} alt={userInfo?.username || "User"} />
-                ) : (
-                  <UserSvgAvatar>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                  </UserSvgAvatar>
-                )}
-              </Avatar>
-              <UserInfo>
-                <UserGreeting>Hello</UserGreeting>
-                <Username>{userInfo?.username || "User"}</Username>
-              </UserInfo>
-            </ProfileDetails>
-          </ProfileHeader>
+                {/* Stats Section */}
+                <StatsGrid>
+                  <StatCard>
+                    <StatLabel>Total cash</StatLabel>
+                    <StatValue>
+                      <RotatingDigits value={userInfo?.totalCash || 0} formatter={formatCurrency} duration={2000} />
+                    </StatValue>
+                  </StatCard>
 
-          <StatsGrid>
-            <StatItem whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}>
-              <StatLabel>
-                <IconWrapper>
-                  <DollarSign size={16} />
-                </IconWrapper>
-                <span>Cash Earned</span>
-              </StatLabel>
-              <StatValue>{formatCurrency(userInfo?.totalCash || 0)}</StatValue>
-            </StatItem>
+                  <StatCard>
+                    <StatLabel>Total coins</StatLabel>
+                    <StatValue>
+                      <RotatingDigits value={userInfo?.totalPoints || 0} formatter={formatNumber} duration={2000} />
+                    </StatValue>
+                  </StatCard>
+                </StatsGrid>
 
-            <StatItem whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}>
-              <StatLabel>
-                <IconWrapper>
-                  <Coins size={16} />
-                </IconWrapper>
-                <span>Points Earned</span>
-              </StatLabel>
-              <StatValue>{formatNumber(userInfo?.totalPoints || 0)}</StatValue>
-            </StatItem>
-          </StatsGrid>
-        </Card>
+                {/* Milestones Section */}
+                <MilestoneSection>
+                  <SectionTitle>Referral milestones</SectionTitle>
 
-        {/* Referral Tier Progress Card */}
-        <Card variants={cardVariants}>
-          <CardHeader>
-            <IconWrapper>
-              <Award size={20} />
-            </IconWrapper>
-            <CardTitle>Referral Tier Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ProgressContainer>
-              <ProgressInfo>
-                <ProgressLabel>
-                  {currentTier ? `Current Tier: ${currentTier.name}` : "Working toward first tier"}
-                </ProgressLabel>
-                <ProgressCounter>
-                  <CurrentValue>{userInfo?.successfulReferralCount || 0}</CurrentValue>
-                  <TargetValue>{nextTier ? `/ ${nextTier.value} referrals` : `referrals`}</TargetValue>
-                </ProgressCounter>
-              </ProgressInfo>
+                  <ProgressCount>
+                    <CurrentCount>{userInfo?.successfulReferralCount || 0}</CurrentCount> referrals
+                    {currentMilestone >= 0 && (
+                      <span style={{ marginLeft: "auto" }}>
+                        Current tier: <span style={{ color: "#4a80f0" }}>{getCurrentTierName()}</span>
+                      </span>
+                    )}
+                  </ProgressCount>
 
-              {/* Tier Progress Bar */}
-              <ProgressBarContainer>
-                <ProgressBarBackground>
-                  <ProgressBarFill
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.min(percentage, 100)}%` }}
-                    transition={{ duration: 1.5, ease: "easeOut" }}
-                  />
-                </ProgressBarBackground>
+                  <ProgressBar>
+                    <ProgressLine>
+                      <ProgressFill
+                        width={barFillPercentage}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(barFillPercentage, 100)}%` }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                      />
+                    </ProgressLine>
 
-                <ProgressMarkers>
-                  {tiers.map((tier) => {
-                    const isActive = userInfo?.successfulReferralCount >= tier.value;
+                    <MilestoneMarkers>
+                      {milestones.map((milestone, index) => {
+                        const isActive = isMaxTier
+                          ? true
+                          : index <= currentMilestone || (index === nextMilestone && percentage >= 50);
+                        const isAchieved = userInfo?.successfulReferralCount >= milestone.value;
 
-                    return (
-                      <ProgressMarker key={tier.name} isActive={isActive}>
-                        <MarkerDot isActive={isActive}>{isActive ? "✓" : ""}</MarkerDot>
-                        <MarkerLabel>
-                          <MarkerTitle isActive={isActive}>{tier.name}</MarkerTitle>
-                          <MarkerValue>{tier.value}</MarkerValue>
-                        </MarkerLabel>
-                      </ProgressMarker>
-                    );
-                  })}
-                </ProgressMarkers>
-              </ProgressBarContainer>
+                        return (
+                          <MilestoneMarker key={index} tier={milestone.name} active={isActive} achieved={isAchieved}>
+                            {getIconForTier(milestone.name)}
+                            <MilestoneValue active={isActive}>{milestone.value}</MilestoneValue>
+                          </MilestoneMarker>
+                        );
+                      })}
+                    </MilestoneMarkers>
+                  </ProgressBar>
 
-              <ProgressMessage>
-                {nextTier
-                  ? `Complete ${nextTier.value - (userInfo?.successfulReferralCount || 0)} more referrals to reach ${nextTier.name} tier!`
-                  : `You've reached the highest tier! Great job!`}
-              </ProgressMessage>
-            </ProgressContainer>
-          </CardContent>
-        </Card>
+                  <ProgressMessage>
+                    {isMaxTier ? (
+                      <div>You've reached the maximum tier! 🎉</div>
+                    ) : (
+                      <>
+                        <div>
+                          <NextGoal>{referralsToNext}</NextGoal> more referrals to {getNextTierName()}
+                        </div>
+                        <div>
+                          <span>{Math.round(percentage)}%</span> complete <ChevronRight size={16} />
+                        </div>
+                      </>
+                    )}
+                  </ProgressMessage>
+                </MilestoneSection>
 
-        {/* Action Buttons */}
-        <ActionGrid variants={cardVariants}>
-          <ActionButton isPrimary whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <ActionButtonIcon isPrimary>
-              <UserPlus size={18} />
-            </ActionButtonIcon>
-            Refer Friends
-          </ActionButton>
+                {/* Action Buttons */}
+                <ActionButtonsGrid>
+                  <ActionButton primary>REfer</ActionButton>
+                  <ActionButton>REWARD management</ActionButton>
+                </ActionButtonsGrid>
 
-          <ActionButton whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <ActionButtonIcon>
-              <Gift size={18} />
-            </ActionButtonIcon>
-            My Rewards
-          </ActionButton>
-        </ActionGrid>
+                {/* How It Works Section */}
+                <HowItWorksSection>
+                  <HowItWorksTitle>HOW DOES IT WORK</HowItWorksTitle>
+                  <StepsList>
+                    <ConnectingLine />
+                    <Step>
+                      <StepIconWrapper>
+                        <StepNumber>1</StepNumber>
+                        <Share2 size={18} />
+                      </StepIconWrapper>
+                      <StepText>Share your referral link with friends</StepText>
+                    </Step>
 
-        {/* Referral Code Card */}
-        <Card variants={cardVariants}>
-          <CardHeader>
-            <IconWrapper>
-              <Share2 size={20} />
-            </IconWrapper>
-            <CardTitle>Your Referral Code</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ReferralCodeContainer>
-              <ReferralCode>{userInfo?.referralCode || "LOADING"}</ReferralCode>
-              <ActionButtons>
-                <IconButton onClick={copyReferralCode} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                  <Copy size={18} />
-                </IconButton>
-                <IconButton variant="primary" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                  <Share2 size={18} />
-                </IconButton>
-              </ActionButtons>
-            </ReferralCodeContainer>
-          </CardContent>
-        </Card>
+                    <Step>
+                      <StepIconWrapper>
+                        <StepNumber>2</StepNumber>
+                        <Users size={18} />
+                      </StepIconWrapper>
+                      <StepText>Your friends sign up using your link</StepText>
+                    </Step>
 
-        {/* How It Works Card */}
-        <Card variants={cardVariants}>
-          <CardHeader>
-            <CardTitle>How It Works</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <HowItWorksContainer>
-              <StepContainer custom={0} variants={fadeInUp}>
-                <StepIconContainer>
-                  <UserPlus size={18} />
-                </StepIconContainer>
-                <StepContent>
-                  <StepTitle>Invite Friends</StepTitle>
-                  <StepDescription>Share your unique referral code with friends and family</StepDescription>
-                </StepContent>
-              </StepContainer>
-
-              <StepArrow>
-                <ArrowRight />
-              </StepArrow>
-
-              <StepContainer custom={1} variants={fadeInUp}>
-                <StepIconContainer>
-                  <Coins size={18} />
-                </StepIconContainer>
-                <StepContent>
-                  <StepTitle>They Sign Up</StepTitle>
-                  <StepDescription>When they join and qualify using your referral code</StepDescription>
-                </StepContent>
-              </StepContainer>
-
-              <StepArrow>
-                <ArrowRight />
-              </StepArrow>
-
-              <StepContainer custom={2} variants={fadeInUp}>
-                <StepIconContainer>
-                  <DollarSign size={18} />
-                </StepIconContainer>
-                <StepContent>
-                  <StepTitle>Earn Rewards</StepTitle>
-                  <StepDescription>You get cash, points, and climb reward tiers with each referral</StepDescription>
-                </StepContent>
-              </StepContainer>
-            </HowItWorksContainer>
-          </CardContent>
-        </Card>
-      </ContentContainer>
-
-      {/* Toast Notification */}
-      <AnimatePresence>
-        {showToast && (
-          <motion.div
-            className="fixed bottom-5 inset-x-0 flex justify-center"
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-          >
-            <Toast>
-              <ToastIcon>
-                <CheckCircle size={18} />
-              </ToastIcon>
-              <span>Referral code copied to clipboard!</span>
-            </Toast>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                    <Step>
+                      <StepIconWrapper>
+                        <StepNumber>3</StepNumber>
+                        <Gift size={18} />
+                      </StepIconWrapper>
+                      <StepText>Both you and your friend earn rewards</StepText>
+                    </Step>
+                  </StepsList>
+                </HowItWorksSection>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </CardContent>
+      </Card>
     </PageContainer>
   );
 };

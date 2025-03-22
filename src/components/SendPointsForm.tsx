@@ -78,7 +78,7 @@ const SendPointsForm: React.FC<SendPointsFormProps> = ({ onClose, onSubmit, maxA
   };
 
   return (
-    <FormContainer initial="hidden" animate="visible" exit="hidden" variants={formVariants}>
+    <FormContainer initial="hidden" animate="visible" variants={formVariants}>
       <InputWrapper>
         <Input
           type="number"

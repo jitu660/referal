@@ -775,7 +775,7 @@ const DashBoard = ({ userId }: ReferralCardProps) => {
                 {/* Action Buttons */}
                 <ActionButtonsGrid>
                   <ActionButtonLink to="/refer" primary>
-                    Refer
+                    Referral
                   </ActionButtonLink>
                   <ActionButtonLink to="rewards">Rewards</ActionButtonLink>
                 </ActionButtonsGrid>

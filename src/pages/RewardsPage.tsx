@@ -337,7 +337,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({ onClose, onSubmit, maxAmoun
   };
 
   return (
-    <FormContainer initial="hidden" animate="visible" exit="hidden" variants={formVariants}>
+    <FormContainer initial="hidden" animate="visible" variants={formVariants}>
       <Input
         label="Amount (₹)"
         type="number"
@@ -496,7 +496,7 @@ const RewardsPage: React.FC<{ userId: string }> = ({ userId }) => {
     try {
       await fetcherWithJWT("/protected/transaction/sharePoints", "POST", {
         userId,
-        amount: -amount, // Make it negative as it's a debit for the sender
+        amount: amount, // Make it negative as it's a debit for the sender
         clientId: "demo-client-id",
         recipientUsername: username,
       });

@@ -3,12 +3,12 @@
 
 export const BASE_URL = "https://api.example.com"; // Placeholder base URL
 
-type MockMethod = "GET" | "POST";
+export type MockMethod = "GET" | "POST";
 
-interface MockRequest {
+export interface MockRequest {
   url: string;
   method: MockMethod;
-  body?: any;
+  body?: Record<string, unknown>;
 }
 
 export async function mockFetch({ url, method, body }: MockRequest) {
@@ -21,7 +21,7 @@ export async function mockFetch({ url, method, body }: MockRequest) {
     return {
       userId: "mockUser123",
       referralCode: "MOCKREFCODE",
-      clientId: body.clientId,
+      clientId: body?.clientId,
     };
   }
 

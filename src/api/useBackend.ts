@@ -1,13 +1,25 @@
 import useSWR, { SWRConfiguration } from "swr";
-import { mockFetch, BASE_URL } from "../mocks/mockApi";
+import { mockFetch, MockMethod } from "../mocks/mockApi";
+
+// BASE_URL configuration for API endpoints
+export const BASE_URL = import.meta.env.PROD
+  ? "/api" // Production API path
+  : "http://localhost:8080"; // Development server
+
+// Types for API requests and responses
+export interface RequestOptions {
+  url: string;
+  method: MockMethod;
+  body?: Record<string, unknown>;
+}
 
 // JWT for prototyping. In production, replace with secure token handling.
 const JWT_TOKEN = "HARDCODED_JWT_TOKEN";
 
-async function fetcherWithJWT(url: string, method = "GET", body?: any) {
+async function fetcherWithJWT(url: string, method: MockMethod = "GET", body?: Record<string, unknown>) {
   if (import.meta.env.DEV) {
     // Return mock data in development.
-    return mockFetch({ url, method: method as any, body });
+    return mockFetch({ url, method, body });
   }
 
   // Real fetch in production.
@@ -28,16 +40,16 @@ async function fetcherWithJWT(url: string, method = "GET", body?: any) {
 }
 
 // Helper to generate SWR keys with method + body (since SWR expects a string or array key).
-function createKey(url: string, method: string, body?: any) {
+function createKey(url: string, method: MockMethod, body?: Record<string, unknown>) {
   return body ? [url, method, JSON.stringify(body)] : [url, method];
 }
 
 // Custom hook wrapping SWR with JWT-enabled fetcher.
-export function useBackendGET<T = any>(url: string, config?: SWRConfiguration) {
-  return useSWR<T>(createKey(url, "GET"), ([path]) => fetcherWithJWT(path), config);
+export function useBackendGET<T>(url: string, config?: SWRConfiguration) {
+  return useSWR<T>(createKey(url, "GET"), ([path]) => fetcherWithJWT(path, "GET"), config);
 }
 
-export function useBackendPOST<T = any>(url: string, body: any, config?: SWRConfiguration) {
+export function useBackendPOST<T>(url: string, body: Record<string, unknown>, config?: SWRConfiguration) {
   return useSWR<T>(
     createKey(url, "POST", body),
     ([path, , requestBody]) => fetcherWithJWT(path, "POST", JSON.parse(requestBody)),

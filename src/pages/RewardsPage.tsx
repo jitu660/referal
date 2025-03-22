@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Wallet, Coins, History, Send, Filter } from "lucide-react";
 import styled from "@emotion/styled";
@@ -407,6 +407,24 @@ const RewardsPage: React.FC<{ userId: string }> = ({ userId }) => {
   const [transactionFilter, setTransactionFilter] = useState("all");
   const [sendingPoints, setSendingPoints] = useState<string | null>(null);
   const [loadingSend, setLoadingSend] = useState<Set<string>>(new Set());
+  const [isLoadingMock, setIsLoadingMock] = useState(true);
+
+  // Check if user has already visited the rewards page before
+  useEffect(() => {
+    const hasVisitedBefore = localStorage.getItem("hasVisitedRewards");
+
+    if (!hasVisitedBefore) {
+      const timer = setTimeout(() => {
+        setIsLoadingMock(false);
+        localStorage.setItem("hasVisitedRewards", "true");
+      }, 1000); // 1 second delay only on first visit
+
+      return () => clearTimeout(timer);
+    } else {
+      // Skip delay if user has visited before
+      setIsLoadingMock(false);
+    }
+  }, []);
 
   // Fetch user transaction information
   const {
@@ -545,7 +563,7 @@ const RewardsPage: React.FC<{ userId: string }> = ({ userId }) => {
       .filter(Boolean) as Transaction[];
   }, [transactionFilter, transactionHistory]);
 
-  const isLoading = isLoadingTransactionInfo || isLoadingReferrals || isLoadingHistory;
+  const isLoading = isLoadingMock || isLoadingTransactionInfo || isLoadingReferrals || isLoadingHistory;
 
   if (isLoading) {
     return (

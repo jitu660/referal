@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import BottomDrawer from "../components/BottomDrawer";
 import TierRewardsInfo from "../components/TierRewardsInfo";
 import { PageContainer, Card, CardContent, pageVariants, cardVariants } from "../components/common/CardComponents";
+import { useLoading } from "../context/LoadingContext";
 
 // Types
 interface UserInfoData {
@@ -526,7 +527,7 @@ const getIconForTier = (tier: string) => {
   }
 };
 
-const ARTIFICAL_DELAY = 1000; // Set to 0 to allow real API calls to be visible in network tab
+const ARTIFICAL_DELAY = 2000; // Set to 0 to allow real API calls to be visible in network tab
 const DashBoard = ({ userId }: ReferralCardProps) => {
   const [isLoadingMock, setIsLoadingMock] = useState(true);
   const [isRewardsDrawerOpen, setIsRewardsDrawerOpen] = useState(false);
@@ -535,14 +536,23 @@ const DashBoard = ({ userId }: ReferralCardProps) => {
     {}
   );
 
-  // Simulate a loading delay to better demonstrate the skeleton animation
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoadingMock(false);
-    }, ARTIFICAL_DELAY);
+  // Get dashboard visit state from context
+  const { hasDashboardBeenVisited, setDashboardVisited } = useLoading();
 
-    return () => clearTimeout(timer);
-  }, []);
+  // Simulate a loading delay to better demonstrate the skeleton animation only on first visit
+  useEffect(() => {
+    if (!hasDashboardBeenVisited) {
+      const timer = setTimeout(() => {
+        setIsLoadingMock(false);
+        setDashboardVisited(); // Mark dashboard as visited
+      }, ARTIFICAL_DELAY);
+
+      return () => clearTimeout(timer);
+    } else {
+      // Skip delay if user has visited before
+      setIsLoadingMock(false);
+    }
+  }, [hasDashboardBeenVisited, setDashboardVisited]);
 
   const isLoading = apiLoading || isLoadingMock;
 

@@ -239,7 +239,7 @@ const ProgressMessage = styled.div`
   justify-content: space-between;
   font-size: ${(props) => props.theme.fontSizes.sm};
   color: ${(props) => props.theme.colors.text.secondary};
-  margin-top: 0.75rem;
+  margin-top: 2rem;
 
   span {
     color: ${(props) => props.theme.colors.blue[600]};
@@ -615,7 +615,6 @@ const ReferralPage = ({ userId }: ReferralCardProps) => {
   const getCurrentMilestone = () => {
     if (!userInfo)
       return {
-        percentage: 0,
         currentMilestone: -1,
         nextMilestone: 0,
         referralsToNext: 2,
@@ -630,7 +629,6 @@ const ReferralPage = ({ userId }: ReferralCardProps) => {
     // Special case: If user has 0 referrals
     if (referralCount === 0) {
       return {
-        percentage: 0,
         currentMilestone: -1,
         nextMilestone: 0,
         referralsToNext: milestones[0].value,
@@ -660,7 +658,6 @@ const ReferralPage = ({ userId }: ReferralCardProps) => {
       const referralsToNext = nextValue - referralCount;
 
       return {
-        percentage,
         currentMilestone: currentMilestoneIndex,
         nextMilestone: currentMilestoneIndex + 1,
         referralsToNext,
@@ -672,7 +669,6 @@ const ReferralPage = ({ userId }: ReferralCardProps) => {
     // If at or above the highest tier
     if (currentMilestoneIndex === milestones.length - 1) {
       return {
-        percentage: 100,
         currentMilestone: currentMilestoneIndex,
         nextMilestone: null,
         referralsToNext: 0,
@@ -683,11 +679,9 @@ const ReferralPage = ({ userId }: ReferralCardProps) => {
 
     // If below the first tier but has some referrals
     const firstMilestoneValue = milestones[0].value;
-    const percentage = Math.min(Math.floor((referralCount / firstMilestoneValue) * 100), 99);
     const referralsToNext = firstMilestoneValue - referralCount;
 
     return {
-      percentage,
       currentMilestone: -1,
       nextMilestone: 0,
       referralsToNext,
@@ -696,8 +690,7 @@ const ReferralPage = ({ userId }: ReferralCardProps) => {
     };
   };
 
-  const { percentage, currentMilestone, nextMilestone, referralsToNext, isMaxTier, barFillPercentage } =
-    getCurrentMilestone();
+  const { currentMilestone, nextMilestone, referralsToNext, isMaxTier, barFillPercentage } = getCurrentMilestone();
 
   const getCurrentTierName = () => {
     if (currentMilestone < 0) return "Starter";
@@ -805,7 +798,7 @@ const ReferralPage = ({ userId }: ReferralCardProps) => {
                       {milestones.map((milestone, index) => {
                         const isActive = isMaxTier
                           ? true
-                          : index <= currentMilestone || (index === nextMilestone && percentage >= 50);
+                          : index <= currentMilestone || (index === nextMilestone && barFillPercentage >= 50);
                         const isAchieved = userInfo?.successfulReferralCount >= milestone.value;
 
                         return (
@@ -827,7 +820,7 @@ const ReferralPage = ({ userId }: ReferralCardProps) => {
                           <NextGoal>{referralsToNext}</NextGoal> more referrals to {getNextTierName()}
                         </div>
                         <div>
-                          <span>{Math.round(percentage)}%</span> complete <ChevronRight size={16} />
+                          <span>{Math.round(barFillPercentage)}%</span> complete <ChevronRight size={16} />
                         </div>
                       </>
                     )}

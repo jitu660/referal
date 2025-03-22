@@ -13,7 +13,7 @@ export interface MockRequest {
 
 export async function mockFetch({ url, method, body }: MockRequest) {
   // Delay to simulate network latency
-  // await new Promise((resolve) => setTimeout(resolve, 2000));
+  await new Promise((resolve) => setTimeout(resolve, 2000));
 
   // Mock for onboarding a user
   if (url.endsWith("/protected/onboard") && method === "POST") {
@@ -88,10 +88,10 @@ export async function mockFetch({ url, method, body }: MockRequest) {
   // Mock for getting transaction history for a user
   if (url.includes("/protected/transaction/transactionHistory/") && method === "GET") {
     return [
-      { username: "Friend1", amount: 50, type: "cash" },
-      { username: "Friend2", amount: -20, type: "cash" },
-      { username: "Store", amount: 100, type: "points" },
-      { username: "Friend3", amount: -30, type: "points" },
+      { username: "Friend1", amount: 50, type: "Cash" },
+      { username: "Friend2", amount: -20, type: "Cash" },
+      { username: "Store", amount: 100, type: "Points" },
+      { username: "Friend3", amount: -30, type: "Points" },
     ];
   }
 
@@ -100,10 +100,10 @@ export async function mockFetch({ url, method, body }: MockRequest) {
     const transactionType = (body?.type as string) || "all";
 
     const allTransactions = [
-      { username: "Friend1", amount: 50, type: "cash" },
-      { username: "Friend2", amount: -20, type: "cash" },
-      { username: "Store", amount: 100, type: "points" },
-      { username: "Friend3", amount: -30, type: "points" },
+      { username: "Friend1", amount: 50, type: "Cash" },
+      { username: "Friend2", amount: -20, type: "Cash" },
+      { username: "Store", amount: 100, type: "Points" },
+      { username: "Friend3", amount: -30, type: "Points" },
     ];
 
     if (transactionType === "all") {

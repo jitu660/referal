@@ -37,8 +37,8 @@ const tabItems = [
 // Transaction history filter options
 const historyFilterOptions = [
   { id: "all", label: "All" },
-  { id: "cash", label: "Cash" },
-  { id: "points", label: "Points" },
+  { id: "Cash", label: "Cash" },
+  { id: "Points", label: "Points" },
 ];
 
 // Mock vouchers data
@@ -395,7 +395,7 @@ const RewardsPage: React.FC<{ userId: string }> = ({ userId }) => {
     Array<{
       username: string;
       amount: number;
-      type: "cash" | "points";
+      type: "Cash" | "Points";
     }>
   >(`/protected/transaction/transactionHistory/${userId}`, {
     revalidateOnFocus: true,
@@ -506,8 +506,8 @@ const RewardsPage: React.FC<{ userId: string }> = ({ userId }) => {
         };
 
         if (transactionFilter === "all") return transaction;
-        if (transactionFilter === "cash" && transaction.type === "cash") return transaction;
-        if (transactionFilter === "points" && transaction.type === "points") return transaction;
+        if (transactionFilter === "Cash" && transaction.type === "Cash") return transaction;
+        if (transactionFilter === "Points" && transaction.type === "Points") return transaction;
 
         return null;
       })

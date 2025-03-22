@@ -525,7 +525,7 @@ const getIconForTier = (tier: string) => {
   }
 };
 
-const ARTIFICAL_DELAY = 2000;
+const ARTIFICAL_DELAY = 0; // Set to 0 to allow real API calls to be visible in network tab
 const DashBoard = ({ userId }: ReferralCardProps) => {
   const [isLoadingMock, setIsLoadingMock] = useState(true);
   const [isRewardsDrawerOpen, setIsRewardsDrawerOpen] = useState(false);
@@ -533,6 +533,7 @@ const DashBoard = ({ userId }: ReferralCardProps) => {
     `protected/refluent/userinfo/${userId}`,
     {}
   );
+  console.log({ userInfo });
 
   // Simulate a loading delay to better demonstrate the skeleton animation
   useEffect(() => {

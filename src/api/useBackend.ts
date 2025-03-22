@@ -25,6 +25,7 @@ export async function fetcherWithJWT(url: string, method: MockMethod = "GET", bo
 
   // Real fetch in production.
   const fullUrl = `${BASE_URL}${url}`;
+  console.log(`Making API call to: ${fullUrl}`, { method, body });
   const response = await fetch(fullUrl, {
     method,
     headers: {
@@ -37,7 +38,9 @@ export async function fetcherWithJWT(url: string, method: MockMethod = "GET", bo
   if (!response.ok) {
     throw new Error(`Error fetching data: ${response.statusText}`);
   }
-  return response.json();
+  const data = await response.json();
+  console.log(`API response from ${url}:`, data);
+  return data;
 }
 
 // Helper to generate SWR keys with method + body (since SWR expects a string or array key).

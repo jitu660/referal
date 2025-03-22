@@ -4,7 +4,7 @@ import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 
 export interface Transaction {
   id: string;
-  type: "cash" | "points";
+  type: "Cash" | "Points";
   amount: number;
   description: string;
   date: string;
@@ -78,9 +78,9 @@ const TransactionHistoryItem: React.FC<TransactionHistoryItemProps> = ({ transac
           <TransactionDate>{transaction.date}</TransactionDate>
           <TransactionAmount isCredit={isCredit}>
             {isCredit ? "+" : ""}
-            {transaction.type === "cash" ? "₹" : ""}
+            {transaction.type === "Cash" ? "₹" : ""}
             {transaction.amount}
-            {transaction.type === "points" ? " pts" : ""}
+            {transaction.type === "Points" ? " pts" : ""}
           </TransactionAmount>
         </TransactionMeta>
       </TransactionDetails>

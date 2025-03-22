@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import DashBoard from "./pages/Dashboard";
 import ReferPage from "./pages/ReferPage";
+import TrackPage from "./pages/TrackPage";
 import { GlobalStyles } from "./styles/GlobalStyles";
 import { ThemeProvider } from "./styles/ThemeProvider";
 import styled from "@emotion/styled";
@@ -75,6 +76,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<DashBoard userId={"97fffc35b648278c"} />} />
               <Route path="/refer" element={<ReferPage />} />
+              <Route path="/track" element={<TrackPage />} />
             </Routes>
           </MainContent>
         </AppContainer>

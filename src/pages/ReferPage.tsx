@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
 import { Copy, CheckCircle, Search, Send, Info, ArrowLeft } from "lucide-react";
 import styled from "@emotion/styled";
 import { Link } from "react-router-dom";
@@ -9,6 +8,22 @@ import Toast from "../components/ui/toast";
 import ReferralSteps from "../components/ReferralSteps";
 import BottomDrawer from "../components/BottomDrawer";
 import { useBackendPOST } from "../api/useBackend";
+import BackButton from "../components/common/BackButton";
+import {
+  PageContainer,
+  Card,
+  CardHeader,
+  CardContent,
+  CardTitle,
+  HeaderRow,
+  Section,
+  SectionTitle,
+  EmptyStateContainer,
+  pageVariants,
+  cardVariants,
+  getInitials,
+  getAvatarColor,
+} from "../components/common/CardComponents";
 
 // Mock data for contacts with Indian numbers
 const MOCK_CONTACTS = Array(30)
@@ -55,91 +70,6 @@ interface ContactType {
   name: string;
   phone: string;
 }
-
-// Animation variants
-const pageVariants = {
-  initial: { opacity: 0 },
-  animate: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.1,
-    },
-  },
-  exit: { opacity: 0 },
-};
-
-const cardVariants = {
-  initial: { opacity: 0, y: 20 },
-  animate: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: "spring",
-      damping: 20,
-    },
-  },
-  exit: { opacity: 0, y: 20 },
-};
-
-// Styled Components
-const PageContainer = styled(motion.div)`
-  background-color: ${(props) => props.theme.colors.background};
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-
-  @media (min-width: ${(props) => props.theme.breakpoints.sm}) {
-    padding: 1.5rem;
-  }
-`;
-
-const Card = styled(motion.div)`
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-  width: 100%;
-  max-width: 100%; // Full width for mobile
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-
-  @media (min-width: ${(props) => props.theme.breakpoints.md}) {
-    max-width: 480px; // Constrained on larger screens
-  }
-`;
-
-const CardHeader = styled.div`
-  padding: 1.5rem;
-  border-bottom: 1px solid ${(props) => props.theme.colors.gray[100]};
-`;
-
-const CardTitle = styled.h2`
-  font-size: ${(props) => props.theme.fontSizes.lg};
-  font-weight: ${(props) => props.theme.fontWeights.semibold};
-  color: ${(props) => props.theme.colors.text.primary};
-  margin: 0;
-`;
-
-const CardContent = styled.div`
-  padding: 1.5rem;
-`;
-
-const Section = styled.div`
-  margin-bottom: 2rem;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
-
-const SectionTitle = styled.h3`
-  font-size: ${(props) => props.theme.fontSizes.md};
-  font-weight: ${(props) => props.theme.fontWeights.medium};
-  color: ${(props) => props.theme.colors.text.primary};
-  margin: 0 0 1rem 0;
-`;
 
 const ReferralLinkBox = styled.div`
   display: flex;
@@ -275,29 +205,10 @@ const InviteButton = styled(Button)`
   flex-shrink: 0;
 `;
 
-const SectionDivider = styled.div`
-  height: 1px;
-  background-color: ${(props) => props.theme.colors.gray[100]};
-  margin: 1.5rem 0;
-  width: 100%;
-`;
-
-const EmptyStateContainer = styled.div`
-  padding: 1.5rem;
-  text-align: center;
-  background-color: ${(props) => props.theme.colors.gray[50]};
-  border-radius: 12px;
-  border: 1px dashed ${(props) => props.theme.colors.gray[200]};
-  color: ${(props) => props.theme.colors.text.secondary};
-  font-size: ${(props) => props.theme.fontSizes.md};
-  margin: 1rem 0;
-`;
-
 const ContactsSection = styled(Section)`
   background-color: ${(props) => props.theme.colors.gray[50]};
   border-radius: 12px;
   padding: 1.25rem;
-  margin: -1.25rem;
   margin-bottom: 0;
   width: 100%;
   align-items: flex-start;
@@ -334,6 +245,22 @@ const ContactCount = styled.span`
   font-weight: ${(props) => props.theme.fontWeights.medium};
 `;
 
+const InfoIconButton = styled.button`
+  background: transparent;
+  border: none;
+  color: ${(props) => props.theme.colors.blue[400]};
+  padding: 0;
+  margin-left: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    color: ${(props) => props.theme.colors.blue[600]};
+  }
+`;
+
 // Helper function to format Indian phone numbers nicely
 const formatIndianPhoneNumber = (phoneNumber: string) => {
   // Strip any non-digit characters from the phone number
@@ -352,73 +279,6 @@ const formatIndianPhoneNumber = (phoneNumber: string) => {
   // Return the original if it doesn't match expected formats
   return phoneNumber;
 };
-
-// Helper to get initials from name
-const getInitials = (name: string) => {
-  return name
-    .split(" ")
-    .map((part) => part.charAt(0))
-    .join("")
-    .toUpperCase()
-    .substring(0, 2);
-};
-
-// Function to get consistent color based on name
-const getAvatarColor = (name: string) => {
-  const colors = [
-    "#4a80f0", // blue
-    "#f0704a", // coral
-    "#4af0a0", // green
-    "#f04a80", // pink
-    "#804af0", // purple
-    "#f0d14a", // yellow
-  ];
-
-  // Simple hash function to get a consistent color for a name
-  const hashCode = name.split("").reduce((hash, char) => char.charCodeAt(0) + ((hash << 5) - hash), 0);
-
-  return colors[Math.abs(hashCode) % colors.length];
-};
-
-// Add new styled components
-const BackButton = styled(Link)`
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-  color: ${(props) => props.theme.colors.text.primary};
-  font-weight: ${(props) => props.theme.fontWeights.medium};
-  margin-bottom: 1rem;
-  width: fit-content;
-
-  &:hover {
-    color: ${(props) => props.theme.colors.blue[600]};
-  }
-
-  svg {
-    margin-right: 0.5rem;
-  }
-`;
-
-const HeaderRow = styled.div`
-  display: flex;
-  align-items: center;
-`;
-
-const InfoIconButton = styled.button`
-  background: transparent;
-  border: none;
-  color: ${(props) => props.theme.colors.blue[400]};
-  padding: 0;
-  margin-left: 0.75rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &:hover {
-    color: ${(props) => props.theme.colors.blue[600]};
-  }
-`;
 
 const ReferPage = () => {
   const [copied, setCopied] = useState(false);
@@ -486,24 +346,21 @@ const ReferPage = () => {
     setToast((prev) => ({ ...prev, visible: false }));
   };
 
-  // In the return statement, we'll add back button and info icon
   return (
     <PageContainer initial="initial" animate="animate" exit="exit" variants={pageVariants}>
-      <BackButton to="/">
-        <ArrowLeft size={20} />
-        Back to Dashboard
-      </BackButton>
-
       <Card variants={cardVariants}>
-        <CardHeader>
-          <HeaderRow>
-            <CardTitle>Refer & Earn</CardTitle>
-            <InfoIconButton onClick={() => setDrawerOpen(true)}>
-              <Info size={20} />
-            </InfoIconButton>
-          </HeaderRow>
-        </CardHeader>
         <CardContent>
+          <BackButton to="/">Back to Dashboard</BackButton>
+
+          <CardHeader>
+            <HeaderRow>
+              <CardTitle>Refer & Earn</CardTitle>
+              <InfoIconButton onClick={() => setDrawerOpen(true)}>
+                <Info size={20} />
+              </InfoIconButton>
+            </HeaderRow>
+          </CardHeader>
+
           {/* Referral Link Section */}
           <Section>
             <SectionTitle>Your Referral Link</SectionTitle>
@@ -513,12 +370,12 @@ const ReferPage = () => {
                 {copied ? <CheckCircle size={20} /> : <Copy size={20} />}
               </CopyButton>
             </ReferralLinkBox>
-            <Button primary fullWidth>
-              Track Your Referrals
-            </Button>
+            <Link to="/track" style={{ textDecoration: "none", display: "block" }}>
+              <Button primary fullWidth>
+                Track Your Referrals
+              </Button>
+            </Link>
           </Section>
-
-          <SectionDivider />
 
           {/* Contacts Section */}
           <ContactsSection>

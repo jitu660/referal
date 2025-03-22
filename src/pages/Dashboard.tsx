@@ -7,6 +7,8 @@ import { formatNumber, formatCurrency } from "../lib/utils";
 import { Link } from "react-router-dom";
 import BottomDrawer from "../components/BottomDrawer";
 import TierRewardsInfo from "../components/TierRewardsInfo";
+import BackButton from "../components/common/BackButton";
+import { PageContainer, Card, CardContent, pageVariants, cardVariants } from "../components/common/CardComponents";
 
 // Types
 interface UserInfoData {
@@ -22,32 +24,6 @@ interface ReferralCardProps {
   userId: string;
 }
 
-// Animation variants
-const pageVariants = {
-  initial: { opacity: 0 },
-  animate: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.1,
-    },
-  },
-  exit: { opacity: 0 },
-};
-
-const cardVariants = {
-  initial: { opacity: 0, y: 20 },
-  animate: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: "spring",
-      damping: 20,
-    },
-  },
-  exit: { opacity: 0, y: 20 },
-};
-
 // Additional animation for skeletons
 const skeletonPulse = {
   initial: { opacity: 0.6 },
@@ -60,42 +36,6 @@ const skeletonPulse = {
     },
   },
 };
-
-// Styled Components
-const PageContainer = styled(motion.div)`
-  background-color: ${(props) => props.theme.colors.background};
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-
-  @media (min-width: ${(props) => props.theme.breakpoints.sm}) {
-    padding: 1.5rem;
-  }
-`;
-
-const Card = styled(motion.div)`
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-  width: 100%;
-  max-width: 100%; // Full width for mobile
-  margin: 0 auto;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-
-  @media (min-width: ${(props) => props.theme.breakpoints.md}) {
-    max-width: 480px; // Constrained on larger screens
-  }
-`;
-
-const CardContent = styled.div`
-  padding: 1.5rem;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-`;
 
 const ProfileSection = styled.div`
   display: flex;

@@ -351,7 +351,6 @@ const ReferPage = () => {
       <Card variants={cardVariants}>
         <CardContent>
           <BackButton to="/">Back to Dashboard</BackButton>
-
           <CardHeader>
             <HeaderRow>
               <CardTitle>Refer & Earn</CardTitle>

@@ -22,6 +22,7 @@ const DrawerOverlay = styled(motion.div)`
 `;
 
 const DrawerContent = styled(motion.div)`
+  position: relative;
   background-color: white;
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;

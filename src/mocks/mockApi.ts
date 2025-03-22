@@ -40,11 +40,22 @@ export async function mockFetch({ url, method, body }: MockRequest) {
 
   // Mock for sharing points
   if (url.endsWith("/protected/transaction/sharePoints") && method === "POST") {
+    const { amount, recipientUsername } = body as { amount: number; recipientUsername: string };
+
+    // In a real API, this would create a transaction record for both sender and recipient
+    // Here we just return success, and our mock transaction history will simulate the result
+    console.log(`Sharing ${amount} points with ${recipientUsername}`);
+
     return { message: "successful" };
   }
 
   // Mock for withdrawing cash
   if (url.endsWith("/protected/transaction/withdrawCash") && method === "POST") {
+    const { amount, upiId } = body as { amount: number; upiId: string };
+
+    // Log the withdrawal for debugging
+    console.log(`Withdrawing ₹${amount} to UPI: ${upiId}`);
+
     return { message: "success" };
   }
 
@@ -54,7 +65,7 @@ export async function mockFetch({ url, method, body }: MockRequest) {
   }
 
   // Mock for fetching user information for the landing page
-  if (url.includes("/refluent/userinfo/") && method === "GET") {
+  if (url.includes("protected/refluent/userinfo/") && method === "GET") {
     return {
       totalCash: 300,
       totalPoints: 1000,
@@ -69,7 +80,37 @@ export async function mockFetch({ url, method, body }: MockRequest) {
     return [
       { status: "successful", username: "Friend1" },
       { status: "pending", username: "Friend2" },
+      { status: "successful", username: "Friend1" },
+      { status: "pending", username: "Friend2" },
     ];
+  }
+
+  // Mock for getting transaction history for a user
+  if (url.includes("/protected/transaction/transactionHistory/") && method === "GET") {
+    return [
+      { username: "Friend1", amount: 50, type: "cash" },
+      { username: "Friend2", amount: -20, type: "cash" },
+      { username: "Store", amount: 100, type: "points" },
+      { username: "Friend3", amount: -30, type: "points" },
+    ];
+  }
+
+  // Mock for getting specific transaction history
+  if (url.endsWith("/protected/transaction/transactionHistory") && method === "POST") {
+    const transactionType = (body?.type as string) || "all";
+
+    const allTransactions = [
+      { username: "Friend1", amount: 50, type: "cash" },
+      { username: "Friend2", amount: -20, type: "cash" },
+      { username: "Store", amount: 100, type: "points" },
+      { username: "Friend3", amount: -30, type: "points" },
+    ];
+
+    if (transactionType === "all") {
+      return allTransactions;
+    } else {
+      return allTransactions.filter((transaction) => transaction.type === transactionType);
+    }
   }
 
   // Fallback if no mock matches

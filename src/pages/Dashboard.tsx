@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Share2, ChevronRight, Users, Gift, Award, Medal, Target, Trophy, Info } from "lucide-react";
+import { Share2, Users, Gift, Award, Medal, Target, Trophy, Info } from "lucide-react";
 import { useBackendGET } from "../api/useBackend";
 import styled from "@emotion/styled";
 import { formatNumber, formatCurrency } from "../lib/utils";
 import { Link } from "react-router-dom";
 import BottomDrawer from "../components/BottomDrawer";
 import TierRewardsInfo from "../components/TierRewardsInfo";
-import BackButton from "../components/common/BackButton";
 import { PageContainer, Card, CardContent, pageVariants, cardVariants } from "../components/common/CardComponents";
 
 // Types
@@ -242,27 +241,6 @@ const ActionButtonsGrid = styled.div`
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
   margin-bottom: 1.5rem;
-`;
-
-const ActionButton = styled(motion.button)<{ primary?: boolean }>`
-  background-color: ${(props) => (props.primary ? props.theme.colors.blue[500] : "white")};
-  color: ${(props) => (props.primary ? "white" : props.theme.colors.text.primary)};
-  border: ${(props) => (props.primary ? "none" : `1px solid ${props.theme.colors.gray[300]}`)};
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.875rem;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: ${(props) => (props.primary ? props.theme.colors.blue[600] : props.theme.colors.gray[100])};
-  }
 `;
 
 const ActionButtonLink = styled(Link)<{ primary?: boolean }>`
@@ -547,17 +525,20 @@ const getIconForTier = (tier: string) => {
   }
 };
 
-const ARTIFICAL_DELAY = 0;
+const ARTIFICAL_DELAY = 2000;
 const DashBoard = ({ userId }: ReferralCardProps) => {
   const [isLoadingMock, setIsLoadingMock] = useState(true);
   const [isRewardsDrawerOpen, setIsRewardsDrawerOpen] = useState(false);
-  const { data: userInfo, isLoading: apiLoading } = useBackendGET<UserInfoData>(`/refluent/userinfo/${userId}`, {});
+  const { data: userInfo, isLoading: apiLoading } = useBackendGET<UserInfoData>(
+    `protected/refluent/userinfo/${userId}`,
+    {}
+  );
 
   // Simulate a loading delay to better demonstrate the skeleton animation
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoadingMock(false);
-    }, ARTIFICAL_DELAY); // 2 second delay
+    }, ARTIFICAL_DELAY);
 
     return () => clearTimeout(timer);
   }, []);
@@ -779,7 +760,7 @@ const DashBoard = ({ userId }: ReferralCardProps) => {
                           <NextGoal>{referralsToNext}</NextGoal> more referrals to {getNextTierName()}
                         </div>
                         <div>
-                          <span>{Math.round(completePercentage)}%</span> complete <ChevronRight size={16} />
+                          <span>{Math.round(completePercentage)}%</span> complete
                         </div>
                       </>
                     )}
@@ -791,7 +772,7 @@ const DashBoard = ({ userId }: ReferralCardProps) => {
                   <ActionButtonLink to="/refer" primary>
                     Refer
                   </ActionButtonLink>
-                  <ActionButton onClick={openRewardsDrawer}>Rewards</ActionButton>
+                  <ActionButtonLink to="rewards">Rewards</ActionButtonLink>
                 </ActionButtonsGrid>
 
                 {/* How It Works Section */}

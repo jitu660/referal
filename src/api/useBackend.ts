@@ -16,7 +16,8 @@ export interface RequestOptions {
 // JWT for prototyping. In production, replace with secure token handling.
 const JWT_TOKEN = "HARDCODED_JWT_TOKEN";
 
-async function fetcherWithJWT(url: string, method: MockMethod = "GET", body?: Record<string, unknown>) {
+// Export the fetcherWithJWT function to be used directly by components
+export async function fetcherWithJWT(url: string, method: MockMethod = "GET", body?: Record<string, unknown>) {
   if (import.meta.env.DEV) {
     // Return mock data in development.
     return mockFetch({ url, method, body });

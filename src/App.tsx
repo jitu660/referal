@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import DashBoard from "./pages/Dashboard";
 import ReferPage from "./pages/ReferPage";
 import TrackPage from "./pages/TrackPage";
+import RewardsPage from "./pages/RewardsPage";
+import SendCoinsPage from "./pages/SendCoinsPage";
 import { GlobalStyles } from "./styles/GlobalStyles";
 import { ThemeProvider } from "./styles/ThemeProvider";
 import styled from "@emotion/styled";
@@ -77,6 +79,8 @@ export default function App() {
               <Route path="/" element={<DashBoard userId={"97fffc35b648278c"} />} />
               <Route path="/refer" element={<ReferPage />} />
               <Route path="/track" element={<TrackPage />} />
+              <Route path="/rewards" element={<RewardsPage userId={"97fffc35b648278c"} />} />
+              <Route path="/send-coins" element={<SendCoinsPage userId={"97fffc35b648278c"} />} />
             </Routes>
           </MainContent>
         </AppContainer>
